@@ -1,0 +1,418 @@
+<div class="layui-layout layui-layout-admin" style="padding-left: 20px;">
+    <div class="layui-row" style="margin-top: 20px;">
+        <!-- <div class="layui-col-xs6"> -->
+            <div class="layui-col-xs11">
+                <form class="layui-form layui-form-pane" method="post">
+                    <div class="layui-form-item">
+                        <div class="layui-col-xs1"><label class="layui-form-label">增加过条件</label></div>
+                        <div class="layui-col-xs11 layui-input-block" style="margin-left: 0px">
+                            <div id="query-filter"></div>
+                            <input type="text" name="query-filter-input" id="query-filter-input" autocomplete="off" placeholder="请选择 / 输入" class="layui-input" value="" style="width: 50%;">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="layui-col-xs1">
+                <button class="layui-btn" id="add-query">
+                    <i class="layui-icon">&#xe654;</i>确定
+                </button>
+            </div>
+    </div>
+    <div class="layui-row" style="margin-top: 0px;">
+        <div class="layui-col-xs1">
+            <div class="table-filter-btn">
+                <button class="layui-btn layui-btn-normal" data-type="reload_table"><i class="layui-icon">&#xe615;</i>过滤</button>
+            </div>
+            <button class="layui-btn  layui-btn-warm" id="reset-query" style="margin-top: 5px;"><i class="layui-icon">&#xe640;</i>重置</button>
+        </div>
+        <div id="query-list" class="layui-layer-content layui-table-tips-main" style="background: whitesmoke; border: 1px solid #d2d2d2;">
+        </div>
+    </div>
+
+    <table class="layui-hide" id="table_list" lay-filter="table_filter"></table>
+
+    <script type="text/html" id="leftToolbar">
+        <div class="layui-btn-container">
+            <button class="layui-btn" id="add"><i class="layui-icon">&#xe608;</i>增加</button>
+            <button class="layui-btn layui-btn-danger" id="del"><i class="layui-icon">&#xe640;</i>批量删除</button>
+        </div>
+      </script>
+
+    <script type="text/html" id="bar">
+        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
+</div>
+
+<script>
+    var url = '{{.prefix}}/{{.path}}/table';
+
+    var catIns2;
+
+    layui.use(['table','form','element'], function(){
+        var table = layui.table;
+        var form = layui.form;
+        var element = layui.element;
+
+        //方法级渲染
+        var t = table.render({
+            elem: '#table_list'
+            ,url: url
+            ,toolbar: '#leftToolbar'
+            ,defaultToolbar: ['filter', 'exports']
+            ,autoSort: false
+            ,cols: [[
+                {checkbox: true, fixed: true},
+                {{range $i, $item := .display}}
+                    {{if eq $i 0}}
+                    {field:{{$item.Field}},title:{{$item.Title}},sort:true,fixed: 'left'},
+                    {{else}}
+                    {{if eq $item.DBType "M2M"}}
+                    {field:{{$item.Field}},title:{{$item.Title}},sort:false},
+                    {{else}}
+                    {field:{{$item.Field}},title:{{$item.Title}},sort:true},
+                    {{end}}
+                    {{end}}
+                {{end}}
+                {fixed: 'right', width:120, align:'center', toolbar: '#bar'}
+            ]]
+            ,id: 'listReload'
+            ,page: true
+            ,height: "full-130"
+        });
+
+        //触发排序事件 
+        table.on('sort(table_filter)', function(obj){ //注：sort 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+            var conditions = [];
+            var elements = document.getElementsByName("filter-condition");
+            elements.forEach(function(element) {
+                conditions.push(JSON.parse(element.attributes.value.value))
+            });
+            var orderBy = {};
+            orderBy[obj.field] = obj.type;
+            if (conditions.length > 0) {
+                t.reload({
+                    initSort: obj,
+                    where: {
+                        order_by: JSON.stringify(orderBy),
+                        query: JSON.stringify(conditions),
+                    }
+                });
+            } else {
+                t.reload({
+                    where: {
+                        order_by: JSON.stringify(orderBy),
+                        query: "",
+                    }
+                });
+            }
+            return;
+        });
+
+        var $ = layui.$, active = {
+            reload_table: function(){
+                var conditions = [];
+                var elements = document.getElementsByName("filter-condition");
+                elements.forEach(function(element) {
+                    conditions.push(JSON.parse(element.attributes.value.value))
+                });
+                if (conditions.length > 0) {
+                    t.reload({
+                        where: {
+                            page: 1,
+                            limit: 10,
+                            query: JSON.stringify(conditions),
+                        }
+                    });
+                } else {
+                    t.reload({
+                        where: {
+                            query: "",
+                        }
+                    });
+                }
+                return;
+            }
+        };
+
+        //缓存当前操作的是哪个表格的哪个tr的哪个td
+        $(document).off('mousedown','.layui-table-grid-down').on('mousedown','.layui-table-grid-down',function (event) {
+            //直接记录td的jquery对象
+            table._tableTrCurrr = $(this).closest('td');
+        });
+
+        //给弹出的详情里面的按钮添加监听级联的触发原始table的按钮的点击事件
+        $(document).off('click','.layui-table-tips-main [lay-event]').on('click','.layui-table-tips-main [lay-event]',function (event) {
+            var elem = $(this);
+            var tableTrCurrr =  table._tableTrCurrr;
+            if(!tableTrCurrr){
+                return;
+            }
+            var layerIndex = elem.closest('.layui-table-tips').attr('times');
+            layer.close(layerIndex);
+            var elems = table._tableTrCurrr.find('[lay-event="' + elem.attr('lay-event') + '"]');
+            for (i=0; i<elems.length;i++) {
+                if (elems[i].attributes["index"].value == elem[0].attributes["index"].value) {
+                    elems[i].click();
+                    break;   
+                }
+            }
+        });
+
+        $('.table-filter-btn .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+            return;
+        });
+
+        $("#add-query").on("click",function() {
+            var value = document.getElementById("query-filter-input").value;
+            var query = {
+                "field": catIns2.values[0],
+                "exp": catIns2.values[1],
+                "value": value
+            };
+            var queryString =JSON.stringify(query);
+
+            var a = document.createElement('a');
+            a.setAttribute("name", "filter-condition")
+            a.setAttribute("id", "filter-condition")
+            a.setAttribute("value", queryString)
+            a.setAttribute("class", "layui-btn layui-btn-xs layui-btn-normal layui-btn-radius");
+            a.setAttribute("onclick", "this.remove();");
+            a.setAttribute("style", "margin-top: 5px; margin-bottom: 5px;");
+            
+            var fieldElement = document.createElement('span');
+            fieldElement.setAttribute("style", "color: #ee2363;");
+            fieldElement.textContent = " [ " + catIns2.names[0] + " ] ";
+            a.appendChild(fieldElement);
+
+            var expElement = document.createElement('span');
+            expElement.setAttribute("style", "color: Gold;");
+            expElement.textContent = " [ " + catIns2.names[1] + " ] ";
+            a.appendChild(expElement);
+
+            var valueElement = document.createElement('span');
+            valueElement.setAttribute("style", "color: LightGreen;");
+            valueElement.textContent = " [ " + value + " ] ";
+            a.appendChild(valueElement);
+
+            document.getElementById("query-list").appendChild(a);
+            return;
+        });
+
+        $("#reset-query").on("click",function() {
+            document.getElementById("query-list").innerHTML = "";
+            return;
+        });
+
+        $("#add").on("click",function() {
+            // window.location.href="{{.prefix}}/{{.path}}/add";
+            var that = this; 
+                //多窗口模式，层叠置顶
+            layer.open({
+                type: 2
+                ,title: '新增'
+                ,area: ['80%', '80%']
+                ,shade: 0
+                ,maxmin: true
+                ,content: "{{.prefix}}/{{.path}}/add"
+                ,btn: ['关闭']
+                ,close: function(){
+                    layer.closeAll();
+                }
+                ,zIndex: layer.zIndex //重点1
+                ,success: function(layero){
+                layer.setTop(layero); //重点2
+                }
+            });
+            return;
+        });
+        
+        $("#del").on("click",function() {
+            var msg = "";
+            msg = '本操作风险极高，确定执行【批量删除】吗？';
+            
+            layer.confirm(msg, function(){
+                var del_data = {"id":eval("data."+{{(index .display 0).Field}})}
+                $.post('{{urlfor "ApiController.AjaxDel"}}', del_data, function (out) {
+                    if (out.status == 0) {
+                        layer.msg("操作成功",{icon: 1},function () {
+                            $("#reload").click();
+                        })
+                    } else {
+                        layer.msg(out.message)
+                    }
+                }, "json");        
+                return false;
+            });
+            return;
+        });
+
+        //监听工具条
+        table.on('tool(table_filter)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'edit'){
+                // window.location.href="{{.prefix}}/{{.path}}/edit?{{.pkField}}="+eval("data."+{{.pkField}})
+                var that = this; 
+                //多窗口模式，层叠置顶
+                layer.open({
+                    type: 2
+                    ,title: '编辑'
+                    ,area: ['80%', '80%']
+                    ,shade: 0
+                    ,maxmin: true
+                    ,content: "{{.prefix}}/{{.path}}/edit?{{.pkField}}="+eval("data."+{{.pkField}})
+                    ,btn: ['关闭']
+                    ,close: function(){
+                        layer.closeAll();
+                    }
+                    ,zIndex: layer.zIndex //重点1
+                    ,success: function(layero){
+                    layer.setTop(layero); //重点2
+                    }
+                });
+            } else if(obj.event === 'del'){
+                var msg = "";
+                msg = '真的删除【'+ {{.pkField}} + ' = ' + eval("data."+{{.pkField}})+'】的数据么';
+                
+                layer.confirm(msg, function(){
+                    var del_data = {"{{.pkField}}": eval("data."+{{.pkField}})}
+                    var url = "{{.prefix}}/{{.path}}/ajaxdel?{{.pkField}}=" + eval("data."+{{.pkField}})
+                    $.post(url, del_data, function (out) {
+                        if (out.status == 0) {
+                            layer.msg("操作成功",{icon: 1},function () {
+                                $("#reload").click();
+                            })
+                        } else {
+                            layer.msg(out.message, {icon: 2})
+                        }
+                    }, "json");        
+                    return false;
+                });
+                return false;
+            } else if(obj.event === 'detail') {
+                var that = this; 
+                //多窗口模式，层叠置顶
+                layer.open({
+                    type: 2
+                    ,title: '详情'
+                    ,area: ['80%', '80%']
+                    ,shade: 0
+                    ,maxmin: true
+                    ,content: "{{.prefix}}/{{.path}}/detail?" + that.id + "=" + that.getAttribute("index") + "&field=" + that.name
+                    ,btn: ['关闭']
+                    ,close: function(){
+                        layer.closeAll();
+                    }
+                    ,zIndex: layer.zIndex //重点1
+                    ,success: function(layero){
+                    layer.setTop(layero); //重点2
+                    }
+                });
+            } else {
+                layer.msg('操作不存在');
+            }
+            return;
+        });
+
+    });
+
+    var catData = [
+        {{range $i, $item := .display}}
+        {
+            "field": {{$item.Field}},
+            "name": {{$item.Title}},
+            "children": [
+                {"field": "eq", "name": "等于"},
+                {"field": "ne", "name": "不等于"},
+                {{if eq $item.DBType "Number" "Datetime" "Date" "Time" "ForeignKey" "O2O"}}
+                {"field": "gt", "name": "大于"},
+                {"field": "lt", "name": "小于"},
+                {"field": "gte", "name": "大于等于"},
+                {"field": "lte", "name": "小于等于"},
+                {{end}}
+                {{if eq $item.DBType "Char"}}
+                {"field": "is_contains", "name": "包含"},
+                {"field": "not_contains", "name": "不包含"},
+                {{end}}
+                {{if eq $item.DBType "M2M"}}
+                {"field": "is_contains", "name": "包含"},
+                {"field": "not_contains", "name": "不包含"},
+                {{end}}
+            ],
+        },
+        {{end}}
+    ];
+
+    layui.config({
+        base : '/static/js/'
+    }).extend({
+        selectN: './layui_extends/selectN',
+    }).use(['table', 'layer','form','jquery','selectN', 'laydate'],function(){
+        $ = layui.jquery;	
+        var form = layui.form
+        ,selectN = layui.selectN
+        ,selectM = layui.selectM;
+
+        //无限级分类-所有配置
+        catIns2 = selectN({
+            //元素容器【必填】
+            elem: '#query-filter'
+            //候选数据【必填】
+            ,data: catData 
+            ,search: true
+            //设置了长度
+            ,width: null
+            //默认值
+            ,selected: [catData[0].field, catData[0].children[0].field] 
+            
+            //为真只取最后一个值
+            ,last:false       
+    
+            //空值项提示，可设置为数组['请选择省','请选择市','请选择县']
+            ,tips: ['请选择', '请选择', '请选择 / 输入']
+
+            //事件过滤器，lay-filter名 不设置与选择器相同(去#.)
+            ,filter: ''
+
+            //input的name 不设置与选择器相同(去#.)
+            ,name: 'query-filter-name'
+
+            //数据分隔符
+            ,delimiter: ','
+
+            //数据的键名
+            ,field:{idName:'field',titleName:'name',childName:'children'}
+
+            //表单区分 form.render(type, filter); 为class="layui-form" 所在元素的 lay-filter="" 的值 
+            ,formFilter: null      
+                
+        }); 
+
+        form.on('select', function (data) {
+            {{range $i, $item := .display}}
+            {{if eq $item.DBType "Char" "Number" "Bool" "ForeignKey" "M2M" "O2O"}}
+            if (data.value == {{$item.Field}}) {
+                $("#query-filter-input").attr("placeholder", "若不输入，则查询条件为 Null");
+            }
+            {{end}}
+            {{if eq $item.DBType "Datetime"}}
+            if (data.value == {{$item.Field}}) {
+                $("#query-filter-input").attr("placeholder", "yyyy-MM-dd hh:mm:ss");
+            }
+            {{end}}
+            {{if eq $item.DBType "Date"}}
+            if (data.value == {{$item.Field}}) {
+                $("#query-filter-input").attr("placeholder", "yyyy-MM-dd");
+            }
+            {{end}}
+            {{if eq $item.DBType "Time"}}
+            if (data.value == {{$item.Field}}) {
+                $("#query-filter-input").attr("placeholder", "hh-mm-ss");
+            }
+            {{end}}
+            {{end}}
+        });
+    });
+</script>

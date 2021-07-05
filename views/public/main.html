@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>{{.siteName}}</title>
+
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <link rel="stylesheet" href="/static/css/app.css?t=154">
+    <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.min.css" media="all">
+</head>
+
+<body>
+<div class="layui-layout layui-layout-admin kit-layout-admin">
+    <div class="layui-header">
+        <div class="layui-logo"><a style="color: #409388; font-weight: bold;" href="/">{{.siteName}}</a></div>
+        <div class="layui-logo kit-logo-mobile">P</div>
+        <ul class="layui-nav layui-layout-right kit-nav">
+            <li class="layui-nav-item">
+                <a href="javascript:;">
+                    <img src="/static/img/userface.jpg" class="layui-nav-img"> {{.loginUserName}}
+                </a>
+            </li>
+            <li class="layui-nav-item"><a href="/login_out"><i class="fa fa-sign-out" aria-hidden="true"></i> 注销</a></li>
+        </ul>
+    </div>
+
+    <div class="layui-side layui-bg-black kit-side">
+        <div class="layui-side-scroll">
+            <div class="kit-side-fold"><i class="fa fa-navicon" aria-hidden="true"></i></div>
+            <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+            <ul class="layui-nav layui-nav-tree" lay-filter="kitNavbar" kit-navbar>
+                {{range $index, $elem := .SideTree}}
+                {{if $elem}}
+                <li class="layui-nav-item ">
+                    <a class="" href="javascript:;">
+                        {{if $elem.Icon}}<i class="fa layui-icon {{$elem.Icon}}"></i>{{else}}&nbsp;&nbsp;&nbsp;&nbsp;{{end}}&nbsp;&nbsp;<span>{{$elem.Title}}</span>
+                    </a>
+                    <dl class="layui-nav-child">
+                        {{range $i, $e := $elem.Child}}
+                        <dd><a data-url="/{{$elem.Path}}/{{$e.Path}}/list" data-icon="&#xe715;" data-title="{{$e.Title}}" kit-target data-id="{{$elem.Path}}_{{$e.Path}}_list">
+                            &nbsp;&nbsp;{{if $e.Icon}}<i class="fa layui-icon {{$e.Icon}}"></i>{{else}}&nbsp;&nbsp;&nbsp;&nbsp;{{end}}&nbsp;&nbsp;<span>{{$e.Title}}</span>
+                        </a>
+                        </dd>
+                        {{end}}
+                    </dl>
+                </li>
+                {{end}}
+                {{end}}
+            </ul>
+        </div>
+    </div>
+    <div class="layui-body" id="container">
+        <!-- 内容主体区域 -->
+        <div style="padding: 15px;">主体内容加载中,请稍等...</div>
+    </div>
+
+    <div class="layui-footer" style="font-size: 12px;text-align:center;">
+        <!-- 底部固定区域 -->
+        2021 &copy; TDCS  Power by Beego
+    </div>
+</div>
+
+<script src="/static/layui/layui.js?s=36"></script>
+<script>
+    var message;
+    layui.config({
+        base: '/static/js/'
+    }).use(['app', 'message'], function() {
+        var app = layui.app,
+            $ = layui.jquery,
+            layer = layui.layer;
+        //将message设置为全局以便子页面调用
+        message = layui.message;
+        //主入口
+        app.set({
+            type: 'iframe'
+        }).init();
+    });
+</script>
+</body>
+
+</html>

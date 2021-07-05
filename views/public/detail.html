@@ -1,0 +1,124 @@
+<!-- <link rel="stylesheet" href="/static/editor.md/css/editormd.min.css" /> -->
+<div class="layui-layout layui-layout-admin" style="padding-left: 40px;margin-top: 20px;">
+    <form class="layui-form" action="" method="post">
+        <input type="hidden" name="id" value="{{.Detail.id}}">
+        {{range $i, $item := .display}}
+        <div class="layui-form-item">
+            <label class="layui-form-label">{{$item.Title}}</label>
+            {{if eq $item.DBType "Char" "Number"}}
+            <div class="layui-input-block">
+                <input disabled type="text" name="{{$item.Field}}" id="{{$item.Field}}"  autocomplete="off" placeholder="" class="layui-input" value="{{$item.Value}}" style="width: 90%; background-color: #f8f8f8;">
+            {{end}}
+            {{if eq $item.DBType "Bool"}}
+            <div class="layui-input-block">
+                <input disabled type="checkbox" name="{{$item.Field}}" id="{{$item.Field}}" lay-skin="switch" value="{{$item.Value}}", {{if $item.Value}}checked{{end}}>
+            {{end}}
+            {{if eq $item.DBType "ForeignKey" "O2O"}}
+            <div class="layui-input-inline">
+                <select disabled name="{{$item.Field}}" required  lay-search="" style="width: 90%; background-color: #f8f8f8;" value="{{$item.Value}}">
+                    <option value="">{{$item.Title}}</option>
+                    {{range $index, $elem := $.linkItems}}
+                    {{if eq $index $item.Field}}
+                    {{range $index2, $link := $elem}}
+                    <option value="{{index $link $item.Index}}" {{if (index $link "checked")}}selected=""{{end}}> {{index $link $item.ShowField}}</option>
+                    {{end}}
+                    {{end}}
+                    {{end}}
+                </select>
+            {{end}}
+            {{if eq $item.DBType "M2M"}}
+            <div class="layui-input-block" id="{{$item.Field}}" style="width: 90%;" value="{{$item.Value}}">
+            {{end}}
+            {{if eq $item.DBType "Datetime"}}
+            <div class="layui-input-block">
+                <input disabled type="text" name="{{$item.Field}}" id="{{$item.Field}}"  autocomplete="off" placeholder="" class="layui-input" value="{{$item.Value}}" style="width: 90%; background-color: #f8f8f8;">
+            {{end}}
+            {{if eq $item.DBType "Time"}}
+            <div class="layui-input-block">
+                <input disabled type="text" name="{{$item.Field}}" id="{{$item.Field}}"  autocomplete="off" placeholder="" class="layui-input" value="{{$item.Value}}" style="width: 90%; background-color: #f8f8f8;">
+            {{end}}
+            {{if eq $item.DBType "Text"}}
+            <div class="layui-input-block">
+                <textarea disabled name="{{$item.Field}}" class="layui-textarea" style="width: 90%; background-color: #f8f8f8;" value="{{$item.Value}}"></textarea>
+            {{end}}
+            {{if eq $item.DBType "File"}}
+            <div class="layui-input-inline">
+                <br>
+                <div>
+                    {{if eq $item.CDN "true"}}
+                    {{if ne $item.Value ""}}
+                    <a style="width: 90%; color: #87dafb;" href="https://{{$.CDNStatic}}/{{$item.Value}}">{{$item.Value}}</a>
+                    {{$ext := FileExt $item.Value}}
+                    {{if eq $ext "png" "jpg" "jpeg" "bmp" "gif" "webp" "psd" "svg" "tiff"}}
+                    <img src="https://{{$.CDNStatic}}/{{$item.Value}}" style="width: 180px">
+                    {{end}}
+                    {{end}}
+                    {{else}}
+                    <a style="width: 90%; color: #87dafb;">{{$item.Value}}</a>
+                    {{end}}
+                </div>
+                <br>
+            {{end}}
+            </div>
+        </div>
+        {{end}}
+    </form>
+</div>
+<script>
+    function fmtTime(v) {
+        return ("00" + parseInt(v/3600)).slice (-2) + ":" + ("00" + parseInt(Math.round(v%3600)/60)).slice (-2) + ":" + ("00" + parseInt(Math.round(Math.round(v%3600)%60))).slice (-2);
+    }
+    layui.use('laydate', function(){
+      var laydate = layui.laydate;
+      {{range $i, $item := .display}}
+      {{if eq $item.DBType "Datetime"}}
+      laydate.render({
+        elem: '#{{$item.Field}}',
+        type: 'datetime',
+        value: new Date({{$item.Value}}),
+      });
+      {{end}}
+      {{if eq $item.DBType "Time"}}
+      laydate.render({
+        elem: '#{{$item.Field}}',
+        type: 'time',
+        value: fmtTime({{$item.Value}}),
+      });
+      {{end}}
+      {{end}}
+    });
+</script>
+<script>
+    layui.use('transfer', function(){
+    var transfer = layui.transfer;
+   
+    {{range $i, $item := .display}}
+    {{if eq $item.DBType "M2M"}}
+    transfer.render({
+      elem: '#{{$item.Field}}',  //绑定元素
+      title: ["未选中", "已选中"]
+      ,data: [
+        {{range $index, $elem := $.linkItems}}
+        {{if eq $index $item.Field}}
+        {{range $index2, $link := $elem}}
+        {"value": {{index $link $item.Index}}, "title": {{index $link $item.ShowField}}, "disabled": "true", "checked": ""},
+        {{end}}
+        {{end}}
+        {{end}}
+      ],
+      value: [{{range $index, $elem := $.linkItems}}
+        {{if eq $index $item.Field}}
+        {{range $index2, $link := $elem}}
+        {{if (index $link "checked")}}
+        {{index $link $item.Index}},
+        {{end}}
+        {{end}}
+        {{end}}
+        {{end}}]
+      ,id: '{{$item.Field}}' //定义索引
+      ,showSearch: true
+    });
+    {{end}}
+    {{end}}
+  });
+</script>

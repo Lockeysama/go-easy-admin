@@ -1,0 +1,253 @@
+<!-- <link rel="stylesheet" href="/static/editor.md/css/editormd.min.css" /> -->
+<div class="layui-layout layui-layout-admin" style="padding-left: 40px;margin-top: 20px;">
+    <form class="layui-form" action="" method="post">
+        {{range $i, $item := .display}}
+        <div class="layui-form-item">
+            <label class="layui-form-label">{{$item.Title}}</label>
+            {{if eq $item.DBType "Char" "Number"}}
+            <div class="layui-input-block">
+                <input {{if eq $item.Field $.pkField}}disabled{{end}} {{if eq $item.Required "true"}}required{{end}} type="text" name="{{$item.Field}}" id="{{$item.Field}}" autocomplete="off" placeholder="" class="layui-input" value="" style="width: 90%;{{if eq $item.Field $.pkField}};background-color: #f8f8f8;{{end}}">
+            {{end}}
+            {{if eq $item.DBType "Bool"}}
+            <div class="layui-input-block">
+                <input {{if eq $item.Field $.pkField}}disabled{{end}} {{if eq $item.Required "true"}}required{{end}} type="checkbox" name="{{$item.Field}}" id="{{$item.Field}}" lay-skin="switch" style="{{if eq $item.Field $.pkField}};background-color: #f8f8f8;{{end}}">
+            {{end}}
+            {{if eq $item.DBType "ForeignKey" "O2O"}}
+            <div class="layui-input-inline">
+                <select {{if eq $item.Field $.pkField}}disabled{{end}} {{if eq $item.Required "true"}}required{{end}} name="{{$item.Field}}" lay-search="" case-sensitive="false" style="width: 90%;{{if eq $item.Field $.pkField}};background-color: #f8f8f8;{{end}}">
+                    <option value="">{{$item.Title}}</option>
+                    {{range $index, $elem := $.linkItems}}
+                    {{if eq $index $item.Field}}
+                    {{range $index2, $link := $elem}}
+                    <option value="{{index $link $item.Index}}" {{if (index $link "checked")}}selected=""{{end}}> {{index $link $item.ShowField}}</option>
+                    {{end}}
+                    {{end}}
+                    {{end}}
+                </select>
+            {{end}}
+            {{if eq $item.DBType "M2M"}}
+            <div class="layui-input-block" id="{{$item.Field}}" style="width: 90%;">
+            {{end}}
+            {{if eq $item.DBType "Datetime"}}
+            <div class="layui-input-block">
+                <input {{if eq $item.Field $.pkField}}disabled{{else}}required{{end}} {{if eq $item.Required "true"}}required{{end}} type="text" name="{{$item.Field}}" id="{{$item.Field}}"  autocomplete="off" placeholder="" class="layui-input" style="width: 90%;{{if eq $item.Field $.pkField}};background-color: #f8f8f8;{{end}}">
+            {{end}}
+            {{if eq $item.DBType "Time"}}
+            <div class="layui-input-block">
+                <input {{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}}disabled{{end}} type="text" name="{{$item.Field}}" id="{{$item.Field}}"  autocomplete="off" placeholder="" class="layui-input" value="{{$item.Value}}" style="width: 90%;{{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}};background-color: #f8f8f8;{{end}}">
+            {{end}}
+            {{if eq $item.DBType "Text"}}
+            <div {{if eq $item.Field $.pkField}}disabled{{end}} {{if eq $item.Required "true"}}required{{end}} class="layui-input-block">
+                <textarea name="{{$item.Field}}" class="layui-textarea" style="width: 90%;{{if eq $item.Field $.pkField}};background-color: #f8f8f8;{{end}}"></textarea>
+            {{end}}
+            {{if eq $item.DBType "File"}}
+            <div class="layui-upload-drag" name="{{$item.Field}}-File" id="{{$item.Field}}-File">
+                <i class="layui-icon"></i>
+                <p>点击上传，或将文件拖拽到此处</p>
+                <div class="layui-hide" id="uploadView">
+                    <hr>
+                    <img src="" alt="上传成功后渲染" style="max-width: 196px">
+                    <a id="{{$item.Field}}-Path"></a>
+                </div>
+            </div>
+            <div>
+                <input class="layui-upload-file" type="text" name="{{$item.Field}}" id="{{$item.Field}}">
+            {{end}}
+            </div>
+        </div>
+        {{end}}
+        
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit="" lay-filter="sub">保存</button>
+                <button class="layui-btn" lay-submit="" lay-filter="sub-and-close">保存并关闭</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+
+    layui.use('laydate', function(){
+      var laydate = layui.laydate;
+      {{range $i, $item := .display}}
+      {{if eq $item.DBType "Datetime"}}
+      laydate.render({
+        elem: '#{{$item.Field}}',
+        type: 'datetime',
+        value: new Date(),
+      });
+      {{end}}
+      {{if eq $item.DBType "Time"}}
+      laydate.render({
+        elem: '#{{$item.Field}}',
+        type: 'time',
+        value: '00:00:00',
+      });
+      {{end}}
+      {{end}}
+    });
+</script>
+<script>
+    layui.use(['transfer', 'upload'], function(){
+    var transfer = layui.transfer;
+    var upload = layui.upload;
+   
+    {{range $i, $item := .display}}
+    {{if eq $item.DBType "M2M"}}
+    transfer.render({
+      elem: '#{{$item.Field}}',  //绑定元素
+      title: ["未选中", "已选中"]
+      ,data: [
+        {{range $index, $elem := $.linkItems}}
+        {{if eq $index $item.Field}}
+        {{range $index2, $link := $elem}}
+        {"value": {{index $link $item.Index}}, "title": {{index $link $item.ShowField}}, "disabled": "", "checked": ""},
+        {{end}}
+        {{end}}
+        {{end}}
+      ],
+      value: [{{range $index, $elem := $.linkItems}}
+        {{if eq $index $item.Field}}
+        {{range $index2, $link := $elem}}
+        {{if (index $link "checked")}}
+        {{index $link $item.Index}},
+        {{end}}
+        {{end}}
+        {{end}}
+        {{end}}]
+      ,id: '{{$item.Field}}' //定义索引
+      ,showSearch: true
+    });
+    {{end}}
+    {{if eq $item.DBType "File"}}
+    upload.render({
+        elem: '#{{$item.Field}}-File'
+        ,accept: 'file'
+        ,multiple: false
+        ,url: '{{$.prefix}}/{{$.path}}/ajaxupload?path={{$item.Meta}}&blur={{$item.Blur}}'
+        ,before: function(obj){
+            layer.load();
+        }
+        ,done: function(res){
+            layer.msg('上传成功');
+            var msg = res.data.path.split("?")[0];
+            var ext = msg.split(".").pop();
+            var img = ['png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp', 'psd', 'svg', 'tiff'].indexOf(ext.toLowerCase()) !== -1;
+            if (img) {
+                layui.$('#uploadView').removeClass('layui-hide').find('img').attr('src', res.data.fullPath);
+                layui.$('#uploadView').find('img').removeClass('layui-hide');
+                layui.$('#{{$item.Field}}-Path').addClass('layui-hide');
+            } else {
+                layui.$('#uploadView').removeClass('layui-hide');
+                layui.$('#{{$item.Field}}-Path').removeClass('layui-hide');
+                layui.$('#{{$item.Field}}-Path').attr('href', res.data.fullPath);
+                layui.$('#{{$item.Field}}-Path').text(res.data.fullPath);
+                layui.$('#uploadView').find('img').addClass('layui-hide');
+            }
+            
+            layui.$('#{{$item.Field}}').attr('value', res.data.path);
+            console.log(res)
+            layer.closeAll('loading'); //关闭loading
+        }
+        ,error: function(index, upload){
+            layer.closeAll('loading'); //关闭loading
+        }
+    });
+    {{end}}
+    {{end}}
+  });
+</script>
+<script>
+    var templates = {{.templates}}
+    layui.use(['transfer','form','element','table','layer','jquery'],function(){
+        var form = layui.form; //只有执行了这一步，部分表单元素才会自动修饰成功
+        var $ = layui.jquery;
+        var table = layui.table;
+        var transfer = layui.transfer;
+
+        form.on('submit(sub)', function(data){
+            var form_data = data.field;
+            {{range $i, $item := .display}}
+
+            {{if eq $item.DBType "M2M"}}
+            var srcValues = transfer.getData({{$item.Field}});
+            var destValues = []
+            for (i=0; i<srcValues.length; i++) {
+                destValues.push(srcValues[i].value);
+            }
+            form_data[{{$item.Field}}] = destValues;
+            {{end}}
+
+            {{if eq $item.DBType "Time"}}
+            var time = data.field[{{$item.Field}}].split(":");
+            form_data[{{$item.Field}}] = parseInt(time[0])*3600 + parseInt(time[1])*60 + parseInt(time[2]);
+            {{end}}
+
+            {{if eq $item.DBType "Bool"}}
+            if (document.getElementById({{$item.Field}}).checked) {
+                form_data[{{$item.Field}}] = "on";
+            } else {
+                form_data[{{$item.Field}}] = "off";
+            }
+            {{end}}
+            
+            {{end}}
+            console.log(form_data);
+            $.post('{{.prefix}}/{{.path}}/ajaxsave', form_data, function (out) {
+                if (out.status == 0) {
+                    layer.msg("操作成功",{icon: 1, time: 1500},function () {
+                        console.log("success");
+                        // window.location.href="{{.prefix}}/{{.path}}/list";
+                    })
+                } else {
+                    layer.msg(out.message, {icon: 2})
+                }
+            }, "json");
+            return false;
+        });
+        form.on('submit(sub-and-close)', function(data){
+            var form_data = data.field;
+            {{range $i, $item := .display}}
+
+            {{if eq $item.DBType "M2M"}}
+            var srcValues = transfer.getData({{$item.Field}});
+            var destValues = []
+            for (i=0; i<srcValues.length; i++) {
+                destValues.push(srcValues[i].value);
+            }
+            form_data[{{$item.Field}}] = destValues;
+            {{end}}
+
+            {{if eq $item.DBType "Time"}}
+            var time = data.field[{{$item.Field}}].split(":");
+            form_data[{{$item.Field}}] = parseInt(time[0])*3600 + parseInt(time[1])*60 + parseInt(time[2]);
+            {{end}}
+
+            {{if eq $item.DBType "Bool"}}
+            if (document.getElementById({{$item.Field}}).checked) {
+                form_data[{{$item.Field}}] = "on";
+            } else {
+                form_data[{{$item.Field}}] = "off";
+            }
+            {{end}}
+
+            {{end}}
+            console.log(form_data);
+            $.post('{{.prefix}}/{{.path}}/ajaxsave', form_data, function (out) {
+                if (out.status == 0) {
+                    layer.msg("操作成功",{icon: 1, time: 1500},function () {
+                        console.log("success");
+                        var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                        parent.layer.close(index); //再执行关闭   
+                        // window.location.href="{{.prefix}}/{{.path}}/list";
+                    })
+                } else {
+                    layer.msg(out.message, {icon: 2})
+                }
+            }, "json");
+            return false;
+        });
+        form.render();
+    }); 
+</script>
