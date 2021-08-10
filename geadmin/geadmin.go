@@ -2,35 +2,51 @@ package geadmin
 
 import geacontrollers "github.com/lockeysama/go-easy-admin/geadmin/controllers"
 
-type EngineType int8
+type EngineType string
 
 const (
-	Gin EngineType = iota
-	Beego
+	Gin   EngineType = "Gin"
+	Beego EngineType = "Beego"
+	Other EngineType = "Other"
 )
 
-func Router(engineType EngineType) map[string][]interface{} {
-	switch engineType {
-	case Gin:
-	case Beego:
-		return map[string][]interface{}{
-			"Router": []interface{}{
-				[]interface{}{"/", &geacontrollers.APIDocController{}, "*:Index"},
-				[]interface{}{"/login", &geacontrollers.LoginController{}, "*:Login"},
-				[]interface{}{"/logout", &geacontrollers.LoginController{}, "*:Logout"},
-				[]interface{}{"/no_auth", &geacontrollers.LoginController{}, "*:NoAuth"},
-				[]interface{}{"/home", &geacontrollers.HomeController{}, "*:Index"},
-				[]interface{}{"/home/start", &geacontrollers.HomeController{}, "*:Start"},
-			},
-			"AutoRouter": []interface{}{
-				&geacontrollers.APIDocController{},
-			},
-			"NSAutoRouter": []interface{}{
-				"/admin",
-				[]interface{}{&geacontrollers.AdminController{}},
-				[]interface{}{&geacontrollers.RoleController{}},
-				[]interface{}{&geacontrollers.CasbinController{}},
-			}
-		}
+var EngineName EngineType
+var EngineBaseController interface{}
+
+func InitEngine(engineType EngineType, baseController interface{}) {
+	EngineName = engineType
+	EngineBaseController = baseController
+}
+
+type RouterType int8
+
+const (
+	Router RouterType = iota
+	AutoRouter
+)
+
+func Routers() map[RouterType][]interface{} {
+	return map[RouterType][]interface{}{
+		Router: {
+			[]interface{}{"/", &geacontrollers.APIDocController{}, "*:Index"},
+			[]interface{}{"/login", &geacontrollers.LoginController{}, "*:Login"},
+			[]interface{}{"/logout", &geacontrollers.LoginController{}, "*:Logout"},
+			[]interface{}{"/no_auth", &geacontrollers.LoginController{}, "*:NoAuth"},
+			[]interface{}{"/home", &geacontrollers.HomeController{}, "*:Index"},
+			[]interface{}{"/home/start", &geacontrollers.HomeController{}, "*:Start"},
+		},
+		AutoRouter: {
+			[]interface{}{"/admin", []interface{}{
+				RegistryRouter(&geacontrollers.AdminController{}),
+				RegistryRouter(&geacontrollers.RoleController{}),
+				RegistryRouter(&geacontrollers.CasbinController{}),
+			}},
+		},
 	}
+}
+
+func RegistryRouter(controller geacontrollers.ControllerRolePolicy) geacontrollers.ControllerRolePolicy {
+	geacontrollers.RegisterControllerRolePolicy(controller)
+	geacontrollers.RegisterSideTree(controller)
+	return controller
 }
