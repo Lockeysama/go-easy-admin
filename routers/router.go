@@ -8,88 +8,52 @@
 package routers
 
 import (
-	admincontrollers "TDCS/controllers/admin"
-	basecontrollers "TDCS/controllers/base"
-	datacontrollers "TDCS/controllers/data"
-	hardwarecontrollers "TDCS/controllers/hardware"
-	helpercontrollers "TDCS/controllers/helper"
-	usercontrollers "TDCS/controllers/user"
+	geacontrollers "github.com/lockeysama/go-easy-admin/geadmin/controllers"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
 
 func init() {
-	beego.Router("/", &admincontrollers.APIDocController{}, "*:Index")
-	beego.Router("/login", &admincontrollers.LoginController{}, "*:LoginIn")
-	beego.Router("/login_out", &admincontrollers.LoginController{}, "*:LoginOut")
-	beego.Router("/no_auth", &admincontrollers.LoginController{}, "*:NoAuth")
+	beego.Router("/", &geacontrollers.APIDocController{}, "*:Index")
+	beego.Router("/login", &geacontrollers.LoginController{}, "*:Login")
+	beego.Router("/logout", &geacontrollers.LoginController{}, "*:Logout")
+	beego.Router("/no_auth", &geacontrollers.LoginController{}, "*:NoAuth")
 
-	beego.Router("/home", &admincontrollers.HomeController{}, "*:Index")
-	beego.Router("/home/start", &admincontrollers.HomeController{}, "*:Start")
-	beego.AutoRouter(&admincontrollers.APIDocController{})
+	beego.Router("/home", &geacontrollers.HomeController{}, "*:Index")
+	beego.Router("/home/start", &geacontrollers.HomeController{}, "*:Start")
+	beego.AutoRouter(&geacontrollers.APIDocController{})
 
 	beego.AddNamespace(beego.NewNamespace("/admin",
-		NSAutoRouter(&admincontrollers.AdminController{}),
-		NSAutoRouter(&admincontrollers.RoleController{}),
-		NSAutoRouter(&admincontrollers.CasbinController{}),
+		NSAutoRouter(&geacontrollers.AdminController{}),
+		NSAutoRouter(&geacontrollers.RoleController{}),
+		NSAutoRouter(&geacontrollers.CasbinController{}),
 	))
 
-	beego.AddNamespace(beego.NewNamespace("/user",
-		NSAutoRouter(&usercontrollers.UserController{}),
-		NSAutoRouter(&usercontrollers.AttributeController{}),
-		NSAutoRouter(&usercontrollers.ConfigController{}),
-		NSAutoRouter(&usercontrollers.DeviceUserController{}),
-		NSAutoRouter(&usercontrollers.SocialController{}),
-	))
+	geacontrollers.APIVersion = append(geacontrollers.APIVersion, "v1")
 
-	beego.AddNamespace(beego.NewNamespace("/data",
-		NSAutoRouter(&datacontrollers.UsageRecordController{}),
-	))
-
-	beego.AddNamespace(beego.NewNamespace("/helper",
-		NSAutoRouter(&helpercontrollers.IMHelperConfigController{}),
-	))
-
-	beego.AddNamespace(beego.NewNamespace("/hardware",
-		NSAutoRouter(&hardwarecontrollers.HardwareConfigController{}),
-	))
-
-	basecontrollers.APIVersion = append(basecontrollers.APIVersion, "v1")
-
-	userNS := beego.NewNamespace("/v1",
-		beego.NSNamespace("/user/user", beego.NSInclude(&usercontrollers.UserController{})),
-		beego.NSNamespace("/user/attribute", beego.NSInclude(&usercontrollers.AttributeController{})),
-		beego.NSNamespace("/user/config", beego.NSInclude(&usercontrollers.ConfigController{})),
-		beego.NSNamespace("/user/deviceuser", beego.NSInclude(&usercontrollers.DeviceUserController{})),
-		beego.NSNamespace("/user/social", beego.NSInclude(&usercontrollers.SocialController{})),
-
-		beego.NSNamespace("/data/log_file", beego.NSInclude(&datacontrollers.LogFileController{})),
-		beego.NSNamespace("/data/usage_records", beego.NSInclude(&datacontrollers.UsageRecordController{})),
-
-		beego.NSNamespace("/helper/im_helper_config", beego.NSInclude(&helpercontrollers.IMHelperConfigController{})),
-
-		beego.NSNamespace("/hardware/config", beego.NSInclude(&hardwarecontrollers.HardwareConfigController{})),
-	)
-	beego.AddNamespace(userNS)
+	// userNS := beego.NewNamespace("/v1",
+	// 	beego.NSNamespace("/user/user", beego.NSInclude(&usercontrollers.UserController{})),
+	// )
+	// beego.AddNamespace(userNS)
 }
 
 // AutoRouter 注册路由并注册 CasbinRule 和 SideTree
-func AutoRouter(c basecontrollers.ControllerRolePolicy) *beego.HttpServer {
-	basecontrollers.RegisterControllerRolePolicy(c)
-	basecontrollers.RegisterSideTree(c)
+func AutoRouter(c geacontrollers.ControllerRolePolicy) *beego.HttpServer {
+	geacontrollers.RegisterControllerRolePolicy(c)
+	geacontrollers.RegisterSideTree(c)
 	return beego.AutoRouter(c.(beego.ControllerInterface))
 }
 
 // NSAutoRouter 注册路由并注册 CasbinRule 和 SideTree
-func NSAutoRouter(c basecontrollers.ControllerRolePolicy) beego.LinkNamespace {
-	basecontrollers.RegisterControllerRolePolicy(c)
-	basecontrollers.RegisterSideTree(c)
+func NSAutoRouter(c geacontrollers.ControllerRolePolicy) beego.LinkNamespace {
+	geacontrollers.RegisterControllerRolePolicy(c)
+	geacontrollers.RegisterSideTree(c)
 	return beego.NSAutoRouter(c.(beego.ControllerInterface))
 }
 
 // NSInclude 注册路由并注册 CasbinRule 和 SideTree
-func NSInclude(c basecontrollers.ControllerRolePolicy) beego.LinkNamespace {
-	basecontrollers.RegisterControllerRolePolicy(c)
-	basecontrollers.RegisterSideTree(c)
+func NSInclude(c geacontrollers.ControllerRolePolicy) beego.LinkNamespace {
+	geacontrollers.RegisterControllerRolePolicy(c)
+	geacontrollers.RegisterSideTree(c)
 	return beego.NSInclude(c.(beego.ControllerInterface))
 }

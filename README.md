@@ -61,12 +61,12 @@ Help | 自定义 | 字段帮助信息
 
 ```go
 import (
-	basecontrollers "TDCS/controllers/base"
+	geacontrollers "github.com/lockeysama/go-easy-admin/controllers/base"
 )
 
 // AdminBaseController 管理面板基础类
 type AdminBaseController struct {
-	basecontrollers.ManageBaseController
+	geacontrollers.ManageBaseController
 }
 
 // Prefix 前缀
@@ -89,8 +89,8 @@ func (c *AdminBaseController) PrefixIcon() string {
 
 ```go
 import (
-	adminmodels "TDCS/models/admin"
-	basemodels "TDCS/models/base"
+	geamodels "github.com/lockeysama/go-easy-admin/models/admin"
+	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 )
 
 // AdminController
@@ -99,8 +99,8 @@ type AdminController struct {
 }
 
 // DBModel 返回控制器对应的数据库模型
-func (c *AdminController) DBModel() basemodels.Model {
-	return &adminmodels.Admin{}
+func (c *AdminController) DBModel() geamodels.Model {
+	return &geamodels.Admin{}
 }
 
 // AdminNameAlias 设置控制器侧栏别名
@@ -124,27 +124,27 @@ func (c *AdminController) AdminIcon() string {
 
 ```go
 import (
-	admincontrollers "TDCS/controllers/admin"
-	basecontrollers "TDCS/controllers/base"
-	democontrollers "TDCS/controllers/demo"
+	geacontrollers "github.com/lockeysama/go-easy-admin/controllers/admin"
+	geacontrollers "github.com/lockeysama/go-easy-admin/controllers/base"
+	democontrollers "github.com/lockeysama/go-easy-admin/controllers/demo"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
 
 func init() {
-	beego.Router("/", &admincontrollers.APIDocController{}, "*:Index")
-	beego.Router("/login", &admincontrollers.LoginController{}, "*:LoginIn")
-	beego.Router("/login_out", &admincontrollers.LoginController{}, "*:LoginOut")
-	beego.Router("/no_auth", &admincontrollers.LoginController{}, "*:NoAuth")
+	beego.Router("/", &geacontrollers.APIDocController{}, "*:Index")
+	beego.Router("/login", &geacontrollers.LoginController{}, "*:LoginIn")
+	beego.Router("/login_out", &geacontrollers.LoginController{}, "*:LoginOut")
+	beego.Router("/no_auth", &geacontrollers.LoginController{}, "*:NoAuth")
 
-	beego.Router("/home", &admincontrollers.HomeController{}, "*:Index")
-	beego.Router("/home/start", &admincontrollers.HomeController{}, "*:Start")
-	beego.AutoRouter(&admincontrollers.APIDocController{})
+	beego.Router("/home", &geacontrollers.HomeController{}, "*:Index")
+	beego.Router("/home/start", &geacontrollers.HomeController{}, "*:Start")
+	beego.AutoRouter(&geacontrollers.APIDocController{})
 
 	ns := beego.NewNamespace("/admin",
-		NSAutoRouter(&admincontrollers.AdminController{}),
-		NSAutoRouter(&admincontrollers.RoleController{}),
-		NSAutoRouter(&admincontrollers.CasbinController{}),
+		NSAutoRouter(&geacontrollers.AdminController{}),
+		NSAutoRouter(&geacontrollers.RoleController{}),
+		NSAutoRouter(&geacontrollers.CasbinController{}),
 	)
 	beego.AddNamespace(ns)
 
@@ -155,16 +155,16 @@ func init() {
 }
 
 // AutoRouter 注册路由并注册 CasbinRule 和 SideTree
-func AutoRouter(c basecontrollers.ControllerRolePolicy) *beego.HttpServer {
-	basecontrollers.RegisterControllerRolePolicy(c)
-	basecontrollers.RegisterSideTree(c)
+func AutoRouter(c geacontrollers.ControllerRolePolicy) *beego.HttpServer {
+	geacontrollers.RegisterControllerRolePolicy(c)
+	geacontrollers.RegisterSideTree(c)
 	return beego.AutoRouter(c.(beego.ControllerInterface))
 }
 
 // NSAutoRouter 注册路由并注册 CasbinRule 和 SideTree
-func NSAutoRouter(c basecontrollers.ControllerRolePolicy) beego.LinkNamespace {
-	basecontrollers.RegisterControllerRolePolicy(c)
-	basecontrollers.RegisterSideTree(c)
+func NSAutoRouter(c geacontrollers.ControllerRolePolicy) beego.LinkNamespace {
+	geacontrollers.RegisterControllerRolePolicy(c)
+	geacontrollers.RegisterSideTree(c)
 	return beego.NSAutoRouter(c.(beego.ControllerInterface))
 }
 ```

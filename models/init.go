@@ -10,12 +10,7 @@ import (
 
 	"github.com/beego/beego/v2/client/orm"
 
-	adminmodels "TDCS/models/admin"
-
-	_ "TDCS/models/data"
-	_ "TDCS/models/hardware"
-	_ "TDCS/models/helper"
-	_ "TDCS/models/user"
+	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 )
 
 func init() {
@@ -31,8 +26,5 @@ func init() {
 		fmt.Println(err)
 	}
 
-	adminmodels.RegisterCasbin()
-	adminmodels.RegisterRoles()
-	adminmodels.AddRolesGroupPolicy()
-	adminmodels.CreateSuperUser()
+	geamodels.InitModels()
 }
