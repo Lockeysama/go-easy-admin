@@ -12,11 +12,12 @@ import (
 
 type AdaptController struct {
 	beego.Controller
-	geacontrollers.GEABaseController
+	geacontrollers.GEAManageBaseController
 }
 
 func (c *AdaptController) Init(ctx *context.Context, controllerName string, actionName string, app interface{}) {
-	c.GEABaseController.GEAController = c
+	c.GEAManageBaseController.GEAController = app.(geacontrollers.GEAController)
+	c.GEAManageBaseController.Instance = app.(geacontrollers.ControllerRolePolicy)
 	c.Controller.Init(ctx, controllerName, actionName, app)
 }
 
@@ -71,11 +72,11 @@ func (c *AdaptController) Redirect(url string, code int) {
 }
 
 func (c *AdaptController) ServeJSON(encoding ...bool) {
-	c.ServeJSON(encoding...)
+	c.Controller.ServeJSON(encoding...)
 }
 
 func (c *AdaptController) CustomAbort(status int, body string) {
-	c.CustomAbort(status, body)
+	c.Controller.CustomAbort(status, body)
 }
 
 func (c *AdaptController) WriteString(content string) {
@@ -83,12 +84,12 @@ func (c *AdaptController) WriteString(content string) {
 }
 
 func (c *AdaptController) StopRun() {
-	c.StopRun()
+	c.Controller.StopRun()
 }
 
 func (c *AdaptController) Prepare() {
 	c.Controller.Prepare()
-	c.GEABaseController.Prepare()
+	c.GEAManageBaseController.Prepare()
 }
 
 func (c *AdaptController) SetData(dataType interface{}, data interface{}) {
@@ -114,4 +115,8 @@ func (c *AdaptController) ControllerName() string {
 
 func (c *AdaptController) ActionName() string {
 	return strings.ToLower(c.GetAction())
+}
+
+func (c *AdaptController) List() {
+	c.GEAManageBaseController.List()
 }

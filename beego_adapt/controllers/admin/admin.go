@@ -33,7 +33,7 @@ func (c *AdminController) QueryList(
 	order map[string]string,
 	loadRel bool,
 ) interface{} {
-	l := c.Admin.QueryList(model, page, limit, filters, order, loadRel)
+	l := c.GEAManageBaseController.QueryList(model, page, limit, filters, order, loadRel)
 	x := l.(*[]*geamodels.Admin)
 	fmt.Println(len(*x))
 	return x

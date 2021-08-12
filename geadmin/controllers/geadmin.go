@@ -2,9 +2,13 @@ package geacontrollers
 
 import (
 	"bytes"
+	"crypto/md5"
+	"fmt"
 	"strconv"
+	"strings"
 
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
+	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
 
 	"encoding/gob"
 	"encoding/json"
@@ -16,16 +20,64 @@ import (
 // ManageBaseController 控制器管理基类
 type GEAManageBaseController struct {
 	GEABaseController
+	Instance  ControllerRolePolicy
 	Model     geamodels.Model
 	PageTitle string
 }
 
-// // Init 初始化
-// func (c *ManageBaseController) Init(ctx interface{}, controllerName, actionName string, app interface{}) {
-// 	c.Instance = app.(ControllerRolePolicy)
-// 	c.Model = c.Instance.DBModel()
-// 	c.BaseController.Init(ctx, controllerName, actionName, app)
-// }
+// DBModel 返回控制器对应的数据库模型
+func (c *GEAManageBaseController) DBModel() geamodels.Model {
+	return &geamodels.Admin{}
+}
+
+// Prepare 前期准备
+func (c *GEAManageBaseController) Prepare() {
+	c.GEABaseController.Prepare()
+	c.Model = c.Instance.DBModel()
+
+	prefix := ""
+	if c.Instance != nil {
+		prefix = c.Instance.Prefix()
+	}
+
+	c.SetData("prefix", prefix)
+
+	// fmt.Println(c.ControllerName())
+
+	// if (strings.Compare(c.ControllerName(), "apidoc")) != 0 {
+	// 	fmt.Println("a ...interface{}")
+	// if utils.Contain(c.Ctx().APIVersion(), &APIVersion) {
+	// 	if APIAuthFunc != nil {
+	// 		noAuth := false
+	// 		for _, action := range c.NoAuthAction {
+	// 			if strings.ToLower(action) == c.ActionName() {
+	// 				noAuth = true
+	// 			}
+	// 		}
+	// 		if !noAuth {
+	// 			if err := APIAuthFunc(c); err != nil {
+	// 				actions := []interface{}{"getall", "get", "put", "post", "delete"}
+	// 				if utils.Contain(c.ActionName, &actions) {
+	// 					c.APIRequestError(401, err.Error())
+	// 				} else {
+	// 					c.AjaxMsg(err.Error(), MSG_ERR)
+	// 				}
+	// 			}
+	// 		}
+	// 	} else {
+	// 		panic("APIAuthFunc undefined")
+	// 	}
+	// } else {
+	c.auth()
+	if c.User != nil {
+		c.SetData(
+			"loginUserName",
+			fmt.Sprintf("%s(%s)", c.User.RealName, c.User.UserName),
+		)
+	}
+	// }
+	// }
+}
 
 // PrefixIcon 管理界面一级侧栏图标（https://www.layui.com/doc/element/icon.html）
 func (c *GEAManageBaseController) PrefixIcon() string {
@@ -402,4 +454,103 @@ func (c *GEAManageBaseController) Detail() {
 	c.SetData("display", detailDisplayItems)
 	c.SetLayout("public/layout.html")
 	c.SetTplName("public/detail.html")
+}
+
+// auth 登录权限验证
+func (c *GEAManageBaseController) auth() {
+	arr := strings.Split(c.GetCookie("auth"), "|")
+	if len(arr) == 2 {
+		idStr, password := arr[0], arr[1]
+		userID, _ := strconv.Atoi(idStr)
+		if userID > 0 {
+			var err error
+
+			cacheUser, found := cache.DefaultMemCache().Get("uid" + strconv.Itoa(userID))
+			user := &geamodels.Admin{}
+			if found && cacheUser != nil { //从缓存取用户
+				user = cacheUser.(*geamodels.Admin)
+			} else {
+				o := orm.NewOrm()
+				query := o.QueryTable(user)
+				filters := map[string]interface{}{"id": userID}
+				for key := range filters {
+					query = query.Filter(key, filters[key])
+				}
+				if err := query.One(user); err != nil {
+					c.AjaxMsg("用户不存在", MSG_ERR)
+					return
+				}
+
+				adminRoles := new([]*geamodels.AdminRole)
+				if _, err := o.QueryTable(&geamodels.AdminRole{}).
+					Filter("admin_id", user.ID).
+					All(adminRoles); err != nil {
+					c.AjaxMsg("查询异常: "+err.Error(), MSG_ERR)
+					return
+				}
+				rolesID := []interface{}{}
+				for _, adminRole := range *adminRoles {
+					rolesID = append(rolesID, adminRole.RoleID)
+				}
+
+				roles := new([]*geamodels.Role)
+				if _, err := o.QueryTable(&geamodels.Role{}).
+					Filter("id__in", rolesID...).
+					All(roles); err != nil {
+					c.AjaxMsg("查询异常: "+err.Error(), MSG_ERR)
+					return
+				} else {
+					user.Roles = *roles
+					cache.DefaultMemCache().Set(
+						"uid"+strconv.Itoa(userID),
+						user,
+						cache.DefaultMemCacheExpiration,
+					)
+				}
+			}
+			hash := md5.New()
+			hash.Write([]byte(user.Password + geamodels.Salt))
+			if err == nil && password == fmt.Sprintf("%x", hash.Sum(nil)) {
+				c.User = user
+				c.SideTreeAuth()
+			}
+
+			//不需要权限检查
+			noAuth := `login/logout/getnodes/start/show/ajaxapisave/index/group/public/env/code/apidetail`
+			isNoAuth := strings.Contains(noAuth, c.ActionName())
+
+			cr := new([]geamodels.CasbinRule)
+			o := orm.NewOrm()
+			roles := []interface{}{}
+			for _, r := range user.Roles {
+				roles = append(roles, r.Name)
+			}
+			isHasAuth := false
+			prefix := "/"
+			if c.Instance != nil {
+				prefix = c.Instance.Prefix()
+			}
+			fmt.Println("%s/%s/%s", prefix, c.ControllerName(), c.ActionName())
+
+			o.QueryTable(&geamodels.CasbinRule{}).
+				Filter("V0__in", roles...).
+				Filter(
+					"V1__contains",
+					fmt.Sprintf("%s/%s/%s", prefix, c.ControllerName(), c.ActionName()),
+				).
+				All(cr)
+			if len(*cr) > 0 {
+				isHasAuth = true
+			}
+
+			if !isHasAuth && !isNoAuth {
+				c.AjaxMsg("没有权限", MSG_ERR)
+				return
+			}
+		}
+	}
+
+	if (c.User == nil || c.User.ID == 0) && (c.ControllerName() != "login" || c.ActionName() != "login") {
+		c.redirect("/login")
+	}
 }
