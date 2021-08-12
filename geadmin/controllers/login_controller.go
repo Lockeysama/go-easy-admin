@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
-	beego "github.com/beego/beego/v2/server/web"
 
 	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
 
@@ -23,13 +22,13 @@ type LoginController struct {
 // TODO:XSRF过滤
 func (c *LoginController) Login() {
 	if c.User != nil && c.User.ID > 0 {
-		c.Redirect(beego.URLFor("HomeController.Index"))
+		c.redirect("/home")
 		return
 	}
-	beego.ReadFromRequest(&c.Controller)
-	if c.Ctx.Request.Method == "POST" {
-		username := strings.TrimSpace(c.GetString("username"))
-		password := strings.TrimSpace(c.GetString("password"))
+	// beego.ReadFromRequest(&c.Controller)
+	if c.Ctx().RequestMethod() == "POST" {
+		username := strings.TrimSpace(c.Ctx().InputQuery("username"))
+		password := strings.TrimSpace(c.Ctx().InputQuery("password"))
 
 		if username != "" && password != "" {
 			var user = new(geamodels.Admin)
@@ -42,7 +41,7 @@ func (c *LoginController) Login() {
 			query.One(user)
 
 			fmt.Println(user)
-			flash := beego.NewFlash()
+			// flash := beego.NewFlash()
 			errorMsg := ""
 			hash := md5.New()
 			hash.Write([]byte(password + geamodels.Salt))
@@ -70,13 +69,14 @@ func (c *LoginController) Login() {
 				hash := md5.New()
 				hash.Write([]byte(c.GetClientIP() + "|" + user.Password + geamodels.Salt))
 				authkey := fmt.Sprintf("%x", hash.Sum(nil))
-				c.Ctx.SetCookie("auth", fmt.Sprintf("%d|%s", user.ID, authkey), 7*86400)
+				c.SetCookie("auth", fmt.Sprintf("%d|%s", user.ID, authkey), 7*86400)
 
-				c.Redirect(beego.URLFor("HomeController.Index"))
+				c.redirect("/home")
 			}
-			flash.Error(errorMsg)
-			flash.Store(&c.Controller)
-			c.Redirect(beego.URLFor("LoginController.Login"))
+			fmt.Println(errorMsg)
+			// flash.Error(errorMsg)
+			// flash.Store(&c.Controller)
+			c.redirect("/login")
 		}
 	}
 	c.TplName = "login/login.html"
@@ -84,11 +84,11 @@ func (c *LoginController) Login() {
 
 // Logout 登出
 func (c *LoginController) Logout() {
-	c.Ctx.SetCookie("auth", "")
-	c.Redirect(beego.URLFor("LoginController.Login"))
+	c.SetCookie("auth", "")
+	c.redirect("/login")
 }
 
 // NoAuth 无权限
 func (c *LoginController) NoAuth() {
-	c.Ctx.WriteString("没有权限")
+	c.WriteString("没有权限")
 }

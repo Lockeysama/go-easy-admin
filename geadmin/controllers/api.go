@@ -79,7 +79,7 @@ func RowDataCleaning(row reflect.Value) interface{} {
 
 // RequestID API Get 请求 ID
 func (c *BaseController) RequestID() int64 {
-	id := c.Ctx.Input.Param(":id")
+	id := c.Ctx().InputParam(":id")
 	if id, err := strconv.Atoi(id); err != nil {
 		c.APIRequestError(400, err.Error())
 	} else {
@@ -103,7 +103,7 @@ func (c *BaseController) APIRequestError(code int, msg ...string) {
 // Post 创建数据
 func (c *ManageBaseController) Post() {
 	rowMap := make(map[string]interface{})
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &rowMap); err != nil {
+	if err := json.Unmarshal(c.Ctx().InputRequestBody(), &rowMap); err != nil {
 		c.APIRequestError(400, err.Error())
 		return
 	}
@@ -179,11 +179,11 @@ func (c *ManageBaseController) GetAll(filters map[string]interface{}, order stri
 	lists := reflect.New(reflect.SliceOf(reflect.TypeOf(c.Model))).Interface()
 
 	// 列表
-	page, err := c.GetInt("page")
+	page, err := strconv.Atoi(c.Ctx().InputQuery("page"))
 	if err != nil {
 		page = 1
 	}
-	limit, err := c.GetInt("limit")
+	limit, err := strconv.Atoi(c.Ctx().InputQuery("limit"))
 	if err != nil {
 		limit = 0
 	}
@@ -270,7 +270,7 @@ func (c *ManageBaseController) GetWith(filters ...map[string]interface{}) {
 // Put 更新数据
 func (c *ManageBaseController) Put() {
 	params := make(map[string]interface{})
-	json.Unmarshal(c.Ctx.Input.RequestBody, &params)
+	json.Unmarshal(c.Ctx().InputRequestBody(), &params)
 
 	displayItems := c.DisplayItems(c.Model)
 	m2m := map[string][]interface{}{}
@@ -339,7 +339,7 @@ func (c *ManageBaseController) Put() {
 // PutWith Filters 更新数据
 func (c *ManageBaseController) PutWith(filters ...map[string]interface{}) {
 	params := make(map[string]interface{})
-	json.Unmarshal(c.Ctx.Input.RequestBody, &params)
+	json.Unmarshal(c.Ctx().InputRequestBody(), &params)
 
 	displayItems := c.DisplayItems(c.Model)
 	m2m := map[string][]interface{}{}

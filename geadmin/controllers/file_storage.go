@@ -20,10 +20,10 @@ import (
 
 // AjaxUpload 上传文件
 func (c *ManageBaseController) AjaxUpload() {
-	fh := c.Ctx.Request.MultipartForm.File["file"][0]
+	fh := c.Ctx().RequestMultipartForm().File["file"][0]
 	file, _ := fh.Open()
 
-	path := c.Ctx.Request.URL.Query().Get("path")
+	path := c.Ctx().RequestURL().Query().Get("path")
 	if path == "" {
 		c.AjaxMsg("path not found", MSG_ERR)
 		return
@@ -36,7 +36,7 @@ func (c *ManageBaseController) AjaxUpload() {
 	file.Read(buffer)
 
 	blur := ""
-	if c.Ctx.Request.URL.Query().Get("blur") == "true" {
+	if c.Ctx().RequestURL().Query().Get("blur") == "true" {
 		f := bytes.NewReader(buffer)
 		var loadedImage image.Image
 		var err error
@@ -107,7 +107,7 @@ func (c *ManageBaseController) AjaxGetFile() {
 		c.AjaxMsg("get file failed", MSG_ERR)
 		return
 	}
-	path := strings.Split(c.Ctx.Request.URL.RawQuery, "=")
+	path := strings.Split(c.Ctx().RequestURL().RawQuery, "=")
 	if len(path) < 1 {
 		c.AjaxMsg("path not found", MSG_ERR)
 		return

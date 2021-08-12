@@ -11,11 +11,10 @@ const (
 )
 
 var EngineName EngineType
-var EngineBaseController interface{}
 
-func InitEngine(engineType EngineType, baseController interface{}) {
+func InitEngine(engineType EngineType, baseController geacontrollers.Controller) {
 	EngineName = engineType
-	EngineBaseController = baseController
+	geacontrollers.EngineBaseController = baseController
 }
 
 type RouterType int8
@@ -37,15 +36,15 @@ func Routers() map[RouterType][]interface{} {
 		},
 		AutoRouter: {
 			[]interface{}{"/admin", []interface{}{
-				RegistryRouter(&geacontrollers.AdminController{}),
-				RegistryRouter(&geacontrollers.RoleController{}),
-				RegistryRouter(&geacontrollers.CasbinController{}),
+				AutoRegistryRouter(&geacontrollers.AdminController{}),
+				AutoRegistryRouter(&geacontrollers.RoleController{}),
+				AutoRegistryRouter(&geacontrollers.CasbinController{}),
 			}},
 		},
 	}
 }
 
-func RegistryRouter(controller geacontrollers.ControllerRolePolicy) geacontrollers.ControllerRolePolicy {
+func AutoRegistryRouter(controller geacontrollers.ControllerRolePolicy) geacontrollers.ControllerRolePolicy {
 	geacontrollers.RegisterControllerRolePolicy(controller)
 	geacontrollers.RegisterSideTree(controller)
 	return controller

@@ -5,14 +5,13 @@ import (
 	"reflect"
 	"strings"
 
-	beego "github.com/beego/beego/v2/server/web"
-
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 )
 
 // ControllerRolePolicy CasbinRule
 type ControllerRolePolicy interface {
-	beego.ControllerInterface
+	// beego.ControllerInterface
+	Controller
 	DBModel() geamodels.Model
 	Prefix() string
 	PrefixAlias() string

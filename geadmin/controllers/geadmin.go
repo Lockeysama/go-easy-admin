@@ -2,6 +2,7 @@ package geacontrollers
 
 import (
 	"bytes"
+	"strconv"
 
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 
@@ -10,7 +11,6 @@ import (
 	"reflect"
 
 	"github.com/beego/beego/v2/client/orm"
-	"github.com/beego/beego/v2/server/web/context"
 )
 
 // ManageBaseController 控制器管理基类
@@ -20,12 +20,12 @@ type ManageBaseController struct {
 	PageTitle string
 }
 
-// Init 初始化
-func (c *ManageBaseController) Init(ctx *context.Context, controllerName, actionName string, app interface{}) {
-	c.Instance = app.(ControllerRolePolicy)
-	c.Model = c.Instance.DBModel()
-	c.BaseController.Init(ctx, controllerName, actionName, app)
-}
+// // Init 初始化
+// func (c *ManageBaseController) Init(ctx interface{}, controllerName, actionName string, app interface{}) {
+// 	c.Instance = app.(ControllerRolePolicy)
+// 	c.Model = c.Instance.DBModel()
+// 	c.BaseController.Init(ctx, controllerName, actionName, app)
+// }
 
 // PrefixIcon 管理界面一级侧栏图标（https://www.layui.com/doc/element/icon.html）
 func (c *ManageBaseController) PrefixIcon() string {
@@ -137,18 +137,18 @@ func (c *ManageBaseController) List() {
 // Table 获取管理后台列表数据
 func (c *ManageBaseController) Table() {
 	// 列表
-	page, err := c.GetInt("page")
+	page, err := strconv.Atoi(c.Ctx().InputParam("page"))
 	if err != nil {
 		page = 1
 	}
-	limit, err := c.GetInt("limit")
+	limit, err := strconv.Atoi(c.Ctx().InputParam("limit"))
 	if err != nil {
 		limit = 30
 	}
 
 	var lists interface{}
 
-	orderByStr := c.Ctx.Input.Query("order_by")
+	orderByStr := c.Ctx().InputQuery("order_by")
 	listOrderBy := make(map[string]string)
 	if orderByStr != "" {
 		if err := json.Unmarshal([]byte(orderByStr), &listOrderBy); err != nil {
@@ -157,7 +157,7 @@ func (c *ManageBaseController) Table() {
 		}
 	}
 
-	query := c.Ctx.Input.Query("query")
+	query := c.Ctx().InputQuery("query")
 	listFilter := make(map[string]interface{})
 
 	if query != "" {
@@ -196,7 +196,7 @@ func (c *ManageBaseController) Table() {
 }
 
 func (c *ManageBaseController) ListFilter() map[string]interface{} {
-	queryStr := c.Ctx.Input.Query("query")
+	queryStr := c.Ctx().InputQuery("query")
 	if queryStr == "" {
 		c.AjaxMsg("请输入查询条件", MSG_ERR)
 		return nil
@@ -263,7 +263,7 @@ func (c *ManageBaseController) Edit() {
 	c.makeListPK(gp)
 
 	field := c.Data["pkField"].(string)
-	value := c.Ctx.Input.Query(field)
+	value := c.Ctx().InputQuery(field)
 
 	filters := map[string]interface{}{field: value}
 	r := c.QueryRow(c.Model, filters, true)
@@ -333,9 +333,9 @@ func (c *ManageBaseController) Detail() {
 
 	var detailDisplayItems *[]DisplayItem
 	for _, item := range *gp {
-		field := c.GetString("field", "")
+		field := c.Ctx().InputQuery("field")
 		if item.Field == field {
-			index, _ := c.GetInt(item.Index, 0)
+			index, _ := strconv.Atoi(c.Ctx().InputParam(item.Index))
 			filters := map[string]interface{}{item.Index: index}
 			r := c.QueryRow(item.Model, filters, false)
 			if detailDisplayItems = c.DisplayItems(r.(geamodels.Model)); len(*detailDisplayItems) < 1 {
