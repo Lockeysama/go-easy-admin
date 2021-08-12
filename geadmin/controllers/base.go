@@ -228,7 +228,7 @@ func (c *GEABaseController) auth() {
 				Filter("V0__in", roles...).
 				Filter(
 					"V1__contains",
-					fmt.Sprintf("%s/%s/%s", prefix, c.ControllerName, c.ActionName),
+					fmt.Sprintf("%s/%s/%s", prefix, c.ControllerName(), c.ActionName()),
 				).
 				All(cr)
 			if len(*cr) > 0 {
