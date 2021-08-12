@@ -7,10 +7,8 @@
 // @LicenseUrl http://www.apache.org/licenses/LICENSE-2.0.html
 package routers
 
-func init() {
+import beegoadapt "github.com/lockeysama/go-easy-admin/beego_adapt"
 
-	// userNS := beego.NewNamespace("/v1",
-	// 	beego.NSNamespace("/user/user", beego.NSInclude(&usercontrollers.UserController{})),
-	// )
-	// beego.AddNamespace(userNS)
+func init() {
+	beegoadapt.InjectRouters()
 }

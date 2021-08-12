@@ -1,7 +1,6 @@
 package main
 
 import (
-	adapt "github.com/lockeysama/go-easy-admin/beego_adapt"
 	"github.com/lockeysama/go-easy-admin/geadmin/utils"
 	"github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
 	_ "github.com/lockeysama/go-easy-admin/models"
@@ -11,7 +10,6 @@ import (
 )
 
 func main() {
-	adapt.InitEngine()
 	beego.SetViewsPath("geadmin/views")
 	beego.SetStaticPath("/static", "geadmin/static")
 	beego.AddFuncMap("FileExt", utils.FileExt)

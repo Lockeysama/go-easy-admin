@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
+	beego "github.com/beego/beego/v2/server/web"
 
 	basecontrollers "github.com/lockeysama/go-easy-admin/beego_adapt/controllers/base"
 	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
@@ -23,13 +24,13 @@ type LoginController struct {
 // TODO:XSRF过滤
 func (c *LoginController) Login() {
 	if c.User != nil && c.User.ID > 0 {
-		// c.GEABaseController.redirect("/home")
+		c.Redirect("/home", 302)
 		return
 	}
-	// beego.ReadFromRequest(&c.Controller)
-	if c.Ctx().RequestMethod() == "POST" {
-		username := strings.TrimSpace(c.Ctx().InputQuery("username"))
-		password := strings.TrimSpace(c.Ctx().InputQuery("password"))
+	beego.ReadFromRequest(&c.Controller)
+	if c.RequestMethod() == "POST" {
+		username := strings.TrimSpace(c.RequestQuery("username"))
+		password := strings.TrimSpace(c.RequestQuery("password"))
 
 		if username != "" && password != "" {
 			var user = new(geamodels.Admin)
@@ -42,7 +43,7 @@ func (c *LoginController) Login() {
 			query.One(user)
 
 			fmt.Println(user)
-			// flash := beego.NewFlash()
+			flash := beego.NewFlash()
 			errorMsg := ""
 			hash := md5.New()
 			hash.Write([]byte(password + geamodels.Salt))
@@ -51,14 +52,14 @@ func (c *LoginController) Login() {
 			} else if !user.Status {
 				errorMsg = "该帐号已禁用"
 			} else {
-				user.LastIP = c.GetClientIP()
+				user.LastIP = c.Controller.Ctx.Request.RemoteAddr
 				user.LastLogin = time.Now().Unix()
 				orm.NewOrm().
 					QueryTable(user).
 					Update(
 						orm.Params{
 							"LastLogin": time.Now().Unix(),
-							"LastIP":    c.GetClientIP(),
+							"LastIP":    c.Controller.Ctx.Request.RemoteAddr,
 						},
 					)
 
@@ -68,16 +69,16 @@ func (c *LoginController) Login() {
 					cache.DefaultMemCacheExpiration,
 				)
 				hash := md5.New()
-				hash.Write([]byte(c.GetClientIP() + "|" + user.Password + geamodels.Salt))
+				hash.Write([]byte(user.Password + geamodels.Salt))
 				authkey := fmt.Sprintf("%x", hash.Sum(nil))
 				c.SetCookie("auth", fmt.Sprintf("%d|%s", user.ID, authkey), 7*86400)
 
-				// c.redirect("/home")
+				c.Redirect("/home", 302)
 			}
 			fmt.Println(errorMsg)
-			// flash.Error(errorMsg)
-			// flash.Store(&c.Controller)
-			// c.redirect("/login")
+			flash.Error(errorMsg)
+			flash.Store(&c.Controller)
+			c.Redirect("/login", 302)
 		}
 	}
 	c.Controller.TplName = "login/login.html"
@@ -86,10 +87,10 @@ func (c *LoginController) Login() {
 // Logout 登出
 func (c *LoginController) Logout() {
 	c.SetCookie("auth", "")
-	// c.redirect("/login")
+	c.Redirect("/login", 302)
 }
 
 // NoAuth 无权限
 func (c *LoginController) NoAuth() {
-	c.WriteString("没有权限")
+	c.Ctx.WriteString("没有权限")
 }

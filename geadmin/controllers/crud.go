@@ -194,7 +194,7 @@ func (c *GEAManageBaseController) AjaxSave() {
 	for _, item := range *displayItems {
 		switch item.DBType {
 		case "Char", "File":
-			if value, ok := c.Ctx().RequestForm()[item.Field]; ok && len(value) > 0 {
+			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
 				if value[0] == "<nil>" {
 					params[item.Field] = nil
 				} else {
@@ -202,7 +202,7 @@ func (c *GEAManageBaseController) AjaxSave() {
 				}
 			}
 		case "Number", "ForeignKey", "O2O":
-			if value, ok := c.Ctx().RequestForm()[item.Field]; ok && len(value) > 0 {
+			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
 				if i, err := strconv.Atoi(value[0]); err == nil {
 					params[item.Field] = i
 				} else {
@@ -212,7 +212,7 @@ func (c *GEAManageBaseController) AjaxSave() {
 				}
 			}
 		case "M2M":
-			if value, ok := c.Ctx().RequestForm()[item.Field+"[]"]; ok && len(value) > 0 {
+			if value, ok := c.RequestForm()[item.Field+"[]"]; ok && len(value) > 0 {
 				m2m := []interface{}{}
 				m2mDisplayItems := c.DisplayItems(item.Model)
 			m2mDisplayItemsLoop:
@@ -237,11 +237,11 @@ func (c *GEAManageBaseController) AjaxSave() {
 				params[item.Field] = m2m
 			}
 		case "Bool":
-			if value, ok := c.Ctx().RequestForm()[item.Field]; ok && len(value) > 0 {
+			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
 				params[item.Field] = value[0] == "on"
 			}
 		case "Datetime":
-			if value, ok := c.Ctx().RequestForm()[item.Field]; ok && len(value) > 0 {
+			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
 				if item.DataType == "Time" {
 					params[item.Field], _ = time.Parse("2006-01-02 15:04:05", value[0])
 				} else {
@@ -250,7 +250,7 @@ func (c *GEAManageBaseController) AjaxSave() {
 				}
 			}
 		case "Time":
-			if value, ok := c.Ctx().RequestForm()[item.Field]; ok && len(value) > 0 {
+			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
 				if item.DataType == "Time" {
 					params[item.Field], _ = time.Parse("2006-01-02 15:04:05", value[0])
 				} else {
@@ -366,7 +366,7 @@ func (c *GEAManageBaseController) AjaxDel() {
 	items := c.DisplayItems(c.Model)
 	c.makeListPK(items)
 	field := c.GetData()["pkField"].(string)
-	value := c.Ctx().InputQuery(field)
+	value := c.RequestQuery(field)
 	params := map[string]interface{}{field: value}
 	for key := range params {
 		switch params[key].(type) {

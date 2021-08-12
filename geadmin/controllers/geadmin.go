@@ -138,18 +138,18 @@ func (c *GEAManageBaseController) List() {
 // Table 获取管理后台列表数据
 func (c *GEAManageBaseController) Table() {
 	// 列表
-	page, err := strconv.Atoi(c.Ctx().InputParam("page"))
+	page, err := strconv.Atoi(c.RequestParam("page"))
 	if err != nil {
 		page = 1
 	}
-	limit, err := strconv.Atoi(c.Ctx().InputParam("limit"))
+	limit, err := strconv.Atoi(c.RequestParam("limit"))
 	if err != nil {
 		limit = 30
 	}
 
 	var lists interface{}
 
-	orderByStr := c.Ctx().InputQuery("order_by")
+	orderByStr := c.RequestQuery("order_by")
 	listOrderBy := make(map[string]string)
 	if orderByStr != "" {
 		if err := json.Unmarshal([]byte(orderByStr), &listOrderBy); err != nil {
@@ -158,7 +158,7 @@ func (c *GEAManageBaseController) Table() {
 		}
 	}
 
-	query := c.Ctx().InputQuery("query")
+	query := c.RequestQuery("query")
 	listFilter := make(map[string]interface{})
 
 	if query != "" {
@@ -197,7 +197,7 @@ func (c *GEAManageBaseController) Table() {
 }
 
 func (c *GEAManageBaseController) ListFilter() map[string]interface{} {
-	queryStr := c.Ctx().InputQuery("query")
+	queryStr := c.RequestQuery("query")
 	if queryStr == "" {
 		c.AjaxMsg("请输入查询条件", MSG_ERR)
 		return nil
@@ -264,7 +264,7 @@ func (c *GEAManageBaseController) Edit() {
 	c.makeListPK(gp)
 
 	field := c.GetData()["pkField"].(string)
-	value := c.Ctx().InputQuery(field)
+	value := c.RequestQuery(field)
 
 	filters := map[string]interface{}{field: value}
 	r := c.QueryRow(c.Model, filters, true)
@@ -334,9 +334,9 @@ func (c *GEAManageBaseController) Detail() {
 
 	var detailDisplayItems *[]DisplayItem
 	for _, item := range *gp {
-		field := c.Ctx().InputQuery("field")
+		field := c.RequestQuery("field")
 		if item.Field == field {
-			index, _ := strconv.Atoi(c.Ctx().InputParam(item.Index))
+			index, _ := strconv.Atoi(c.RequestParam(item.Index))
 			filters := map[string]interface{}{item.Index: index}
 			r := c.QueryRow(item.Model, filters, false)
 			if detailDisplayItems = c.DisplayItems(r.(geamodels.Model)); len(*detailDisplayItems) < 1 {

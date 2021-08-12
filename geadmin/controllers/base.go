@@ -16,59 +16,33 @@ import (
 	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
 )
 
-var EngineBaseController GEAController
-
-// APIVersion API Allow（约定 API 接口必有版本，版本必须加入 APIVersion，否则将不能正常工作）
-var APIVersion = []interface{}{}
-
-// APIAuthFunc API 权限校验函数
-var APIAuthFunc func(*GEABaseController) error
-
 // 消息码
 const (
 	MSG_OK  = 0
 	MSG_ERR = -1
 )
 
-type Context interface {
-	InputQuery(string) string
-	InputParam(string) string
-	InputRequestBody() []byte
-	APIVersion() string
-	RequestURL() *url.URL
-	RequestMethod() string
-	RequestForm() url.Values
-	RequestMultipartForm() *multipart.Form
-	RequestRemoteAddr() string
-}
-
 type GEAController interface {
-	SetEngine(GEAController)
 	Prepare()
-	Get()
-	Post()
-	Delete()
-	Put()
-	Head()
-	Patch()
-	Options()
-	Trace()
-	Finish()
-	Render() error
-	XSRFToken() string
-	CheckXSRFCookie() bool
-	HandlerFunc(fn string) bool
-	URLMapping()
 
-	Ctx() Context
-	GetController() string
-	GetAction() string
-	Redirect(url string, code int)
-	ServeJSON(encoding ...bool)
-	CustomAbort(status int, body string)
-	WriteString(string)
 	GetCookie(string) string
 	SetCookie(string, string, ...interface{})
+
+	RequestURL() *url.URL
+	RequestMethod() string
+
+	RequestQuery(string) string
+	RequestParam(string) string
+	RequestBody() []byte
+
+	RequestForm() url.Values
+	RequestMultipartForm() *multipart.Form
+
+	Redirect(url string, code int)
+
+	ServeJSON(encoding ...bool)
+	CustomAbort(status int, body string)
+
 	StopRun()
 
 	SetData(dataType interface{}, data interface{})
@@ -76,6 +50,10 @@ type GEAController interface {
 
 	SetLayout(layoutName string)
 	SetTplName(layoutName string)
+
+	GetController() string
+	GetAction() string
+
 	ControllerName() string
 	ActionName() string
 }
@@ -89,15 +67,6 @@ type GEABaseController struct {
 	APIUser      geamodels.Model
 	PageSize     int
 	CDNStatic    string
-}
-
-func (c *GEABaseController) SetEngine(engine GEAController) {
-	c.GEAController = engine
-}
-
-// APIUserDetail API Get 请求 ID
-func (c *GEABaseController) APIUserDetail(loadRel bool) geamodels.Model {
-	return nil
 }
 
 // Prepare 前期准备
@@ -117,36 +86,36 @@ func (c *GEABaseController) Prepare() {
 	c.SetData("CDNStatic", c.CDNStatic)
 
 	if (strings.Compare(c.ControllerName(), "apidoc")) != 0 {
-		if utils.Contain(c.Ctx().APIVersion(), &APIVersion) {
-			if APIAuthFunc != nil {
-				noAuth := false
-				for _, action := range c.NoAuthAction {
-					if strings.ToLower(action) == c.ActionName() {
-						noAuth = true
-					}
-				}
-				if !noAuth {
-					if err := APIAuthFunc(c); err != nil {
-						actions := []interface{}{"getall", "get", "put", "post", "delete"}
-						if utils.Contain(c.ActionName, &actions) {
-							c.APIRequestError(401, err.Error())
-						} else {
-							c.AjaxMsg(err.Error(), MSG_ERR)
-						}
-					}
-				}
-			} else {
-				panic("APIAuthFunc undefined")
-			}
-		} else {
-			c.auth()
-			if c.User != nil {
-				c.SetData(
-					"loginUserName",
-					fmt.Sprintf("%s(%s)", c.User.RealName, c.User.UserName),
-				)
-			}
+		// if utils.Contain(c.Ctx().APIVersion(), &APIVersion) {
+		// 	if APIAuthFunc != nil {
+		// 		noAuth := false
+		// 		for _, action := range c.NoAuthAction {
+		// 			if strings.ToLower(action) == c.ActionName() {
+		// 				noAuth = true
+		// 			}
+		// 		}
+		// 		if !noAuth {
+		// 			if err := APIAuthFunc(c); err != nil {
+		// 				actions := []interface{}{"getall", "get", "put", "post", "delete"}
+		// 				if utils.Contain(c.ActionName, &actions) {
+		// 					c.APIRequestError(401, err.Error())
+		// 				} else {
+		// 					c.AjaxMsg(err.Error(), MSG_ERR)
+		// 				}
+		// 			}
+		// 		}
+		// 	} else {
+		// 		panic("APIAuthFunc undefined")
+		// 	}
+		// } else {
+		c.auth()
+		if c.User != nil {
+			c.SetData(
+				"loginUserName",
+				fmt.Sprintf("%s(%s)", c.User.RealName, c.User.UserName),
+			)
 		}
+		// }
 	}
 }
 
@@ -203,7 +172,7 @@ func (c *GEABaseController) auth() {
 				}
 			}
 			hash := md5.New()
-			hash.Write([]byte(c.GetClientIP() + "|" + user.Password + geamodels.Salt))
+			hash.Write([]byte(user.Password + geamodels.Salt))
 			if err == nil && password == fmt.Sprintf("%x", hash.Sum(nil)) {
 				c.User = user
 				c.SideTreeAuth()
@@ -264,13 +233,6 @@ func (c *GEABaseController) SideTreeAuth() {
 			cache.DefaultMemCacheExpiration,
 		)
 	}
-}
-
-// GetClientIP 获取用户 IP 地址
-func (c *GEABaseController) GetClientIP() string {
-	s := c.Ctx().RequestRemoteAddr()
-	l := strings.LastIndex(s, ":")
-	return s[0:l]
 }
 
 // Redirect 重定向
@@ -383,4 +345,16 @@ func (c *GEABaseController) FilePresign(method string, paths []string) {
 			c.ServeJSON()
 		}
 	}
+}
+
+// APIRequestError API 请求错误
+func (c *GEABaseController) APIRequestError(code int, msg ...string) {
+	errMsg := ""
+	for _, m := range msg {
+		errMsg += (m + ". ")
+	}
+	if errMsg == "" {
+		errMsg = "请求错误"
+	}
+	c.CustomAbort(code, errMsg)
 }
