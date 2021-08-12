@@ -141,7 +141,7 @@ func fieldParse(field reflect.StructField) (tagsMaps []map[string]string) {
 }
 
 // DisplayItems 返回管理后台列表表单显示选项
-func (c *ManageBaseController) DisplayItems(model geamodels.Model) *[]DisplayItem {
+func (c *GEAManageBaseController) DisplayItems(model geamodels.Model) *[]DisplayItem {
 	v := reflect.ValueOf(model).Elem()
 	if v.Kind() == reflect.Invalid {
 		v = reflect.New(reflect.TypeOf(model).Elem()).Elem()

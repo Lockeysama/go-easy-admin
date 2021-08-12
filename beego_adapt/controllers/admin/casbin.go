@@ -1,4 +1,4 @@
-package geacontrollers
+package admincontrollers
 
 import (
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"

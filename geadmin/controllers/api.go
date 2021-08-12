@@ -11,7 +11,7 @@ import (
 )
 
 // ModelDataCleaning 模型数据清洗
-func (c *BaseController) ModelDataCleaning(data interface{}) interface{} {
+func (c *GEABaseController) ModelDataCleaning(data interface{}) interface{} {
 	if reflect.TypeOf(data).Kind() == reflect.Ptr {
 		data = reflect.ValueOf(data).Elem().Interface()
 	}
@@ -78,7 +78,7 @@ func RowDataCleaning(row reflect.Value) interface{} {
 }
 
 // RequestID API Get 请求 ID
-func (c *BaseController) RequestID() int64 {
+func (c *GEABaseController) RequestID() int64 {
 	id := c.Ctx().InputParam(":id")
 	if id, err := strconv.Atoi(id); err != nil {
 		c.APIRequestError(400, err.Error())
@@ -89,7 +89,7 @@ func (c *BaseController) RequestID() int64 {
 }
 
 // APIRequestError API 请求错误
-func (c *BaseController) APIRequestError(code int, msg ...string) {
+func (c *GEABaseController) APIRequestError(code int, msg ...string) {
 	errMsg := ""
 	for _, m := range msg {
 		errMsg += (m + ". ")
@@ -101,7 +101,7 @@ func (c *BaseController) APIRequestError(code int, msg ...string) {
 }
 
 // Post 创建数据
-func (c *ManageBaseController) Post() {
+func (c *GEAManageBaseController) Post() {
 	rowMap := make(map[string]interface{})
 	if err := json.Unmarshal(c.Ctx().InputRequestBody(), &rowMap); err != nil {
 		c.APIRequestError(400, err.Error())
@@ -169,13 +169,14 @@ func (c *ManageBaseController) Post() {
 				o.LoadRelated(r, item.Field)
 			}
 		}
-		c.Data["json"] = c.ModelDataCleaning(r)
+		c.SetData("json", c.ModelDataCleaning(r))
+
 		c.ServeJSON()
 	}
 }
 
 // GetAll 获取所有数据
-func (c *ManageBaseController) GetAll(filters map[string]interface{}, order string) {
+func (c *GEAManageBaseController) GetAll(filters map[string]interface{}, order string) {
 	lists := reflect.New(reflect.SliceOf(reflect.TypeOf(c.Model))).Interface()
 
 	// 列表
@@ -216,12 +217,13 @@ func (c *ManageBaseController) GetAll(filters map[string]interface{}, order stri
 		}
 	}
 
-	c.Data["json"] = c.ModelDataCleaning(lists)
+	// c.SetData("json", c.ModelDataCleaning(lists)
+	c.SetData("json", c.ModelDataCleaning(lists))
 	c.ServeJSON()
 }
 
 // Get 获取单条数据
-func (c *ManageBaseController) Get() {
+func (c *GEAManageBaseController) Get() {
 	row := reflect.New(reflect.TypeOf(c.Model).Elem()).Interface()
 
 	o := orm.NewOrm()
@@ -237,12 +239,12 @@ func (c *ManageBaseController) Get() {
 			o.LoadRelated(row, item.Field)
 		}
 	}
-	c.Data["json"] = c.ModelDataCleaning(row)
+	c.SetData("json", c.ModelDataCleaning(row))
 	c.ServeJSON()
 }
 
 // GetWith Filters 获取单条数据
-func (c *ManageBaseController) GetWith(filters ...map[string]interface{}) {
+func (c *GEAManageBaseController) GetWith(filters ...map[string]interface{}) {
 	row := reflect.New(reflect.TypeOf(c.Model).Elem()).Interface()
 
 	o := orm.NewOrm()
@@ -263,12 +265,12 @@ func (c *ManageBaseController) GetWith(filters ...map[string]interface{}) {
 			o.LoadRelated(row, item.Field)
 		}
 	}
-	c.Data["json"] = c.ModelDataCleaning(row)
+	c.SetData("json", c.ModelDataCleaning(row))
 	c.ServeJSON()
 }
 
 // Put 更新数据
-func (c *ManageBaseController) Put() {
+func (c *GEAManageBaseController) Put() {
 	params := make(map[string]interface{})
 	json.Unmarshal(c.Ctx().InputRequestBody(), &params)
 
@@ -332,12 +334,12 @@ func (c *ManageBaseController) Put() {
 		}
 	}
 
-	c.Data["json"] = c.ModelDataCleaning(row)
+	c.SetData("json", c.ModelDataCleaning(row))
 	c.ServeJSON()
 }
 
 // PutWith Filters 更新数据
-func (c *ManageBaseController) PutWith(filters ...map[string]interface{}) {
+func (c *GEAManageBaseController) PutWith(filters ...map[string]interface{}) {
 	params := make(map[string]interface{})
 	json.Unmarshal(c.Ctx().InputRequestBody(), &params)
 
@@ -402,23 +404,23 @@ func (c *ManageBaseController) PutWith(filters ...map[string]interface{}) {
 		}
 	}
 
-	c.Data["json"] = c.ModelDataCleaning(row)
+	c.SetData("json", c.ModelDataCleaning(row))
 	c.ServeJSON()
 }
 
 // Delete 删除数据
-func (c *ManageBaseController) Delete() {
+func (c *GEAManageBaseController) Delete() {
 	qs := orm.NewOrm().QueryTable(c.Model).Filter("id", c.RequestID())
 	if _, err := qs.Delete(); err != nil {
 		c.AjaxMsg(err.Error(), MSG_ERR)
 		return
 	}
-	c.Data["json"] = map[string]int{"code": 0}
+	c.SetData("json", map[string]int{"code": 0})
 	c.ServeJSON()
 }
 
 // DeleteWith 删除数据
-func (c *ManageBaseController) DeleteWith(filters ...map[string]interface{}) {
+func (c *GEAManageBaseController) DeleteWith(filters ...map[string]interface{}) {
 	qs := orm.NewOrm().QueryTable(c.Model).Filter("id", c.RequestID())
 	for _, filter := range filters {
 		for k, v := range filter {
@@ -429,6 +431,6 @@ func (c *ManageBaseController) DeleteWith(filters ...map[string]interface{}) {
 		c.AjaxMsg(err.Error(), MSG_ERR)
 		return
 	}
-	c.Data["json"] = map[string]int{"code": 0}
+	c.SetData("json", map[string]int{"code": 0})
 	c.ServeJSON()
 }

@@ -10,18 +10,19 @@ import (
 
 	"github.com/beego/beego/v2/client/orm"
 
+	geaconfig "github.com/lockeysama/go-easy-admin/geadmin/config"
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 	"github.com/lockeysama/go-easy-admin/geadmin/utils"
 	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
 )
 
-var EngineBaseController Controller
+var EngineBaseController GEAController
 
 // APIVersion API Allow（约定 API 接口必有版本，版本必须加入 APIVersion，否则将不能正常工作）
 var APIVersion = []interface{}{}
 
 // APIAuthFunc API 权限校验函数
-var APIAuthFunc func(*BaseController) error
+var APIAuthFunc func(*GEABaseController) error
 
 // 消息码
 const (
@@ -41,8 +42,8 @@ type Context interface {
 	RequestRemoteAddr() string
 }
 
-type Controller interface {
-	SetEngine(Controller)
+type GEAController interface {
+	SetEngine(GEAController)
 	Prepare()
 	Get()
 	Post()
@@ -69,68 +70,58 @@ type Controller interface {
 	GetCookie(string) string
 	SetCookie(string, string, ...interface{})
 	StopRun()
+
+	SetData(dataType interface{}, data interface{})
+	GetData() map[interface{}]interface{}
+
+	SetLayout(layoutName string)
+	SetTplName(layoutName string)
+	ControllerName() string
+	ActionName() string
 }
 
-// BaseController 控制器基础类
-type BaseController struct {
-	Controller
-	Data           map[string]interface{}
-	Layout         string
-	TplName        string
-	Instance       ControllerRolePolicy
-	ControllerName string
-	ActionName     string
-	NoAuthAction   []string
-	User           *geamodels.Admin
-	APIUser        geamodels.Model
-	PageSize       int
-	CDNStatic      string
+// GEABaseController 控制器基础类
+type GEABaseController struct {
+	GEAController
+	Instance     ControllerRolePolicy
+	NoAuthAction []string
+	User         *geamodels.Admin
+	APIUser      geamodels.Model
+	PageSize     int
+	CDNStatic    string
 }
 
-func (c *BaseController) SetEngine(engine Controller) {
-	c.Controller = engine
+func (c *GEABaseController) SetEngine(engine GEAController) {
+	c.GEAController = engine
 }
 
 // APIUserDetail API Get 请求 ID
-func (c *BaseController) APIUserDetail(loadRel bool) geamodels.Model {
+func (c *GEABaseController) APIUserDetail(loadRel bool) geamodels.Model {
 	return nil
 }
 
-// // Init 初始化
-// func (c *BaseController) Init(ctx interface{}, controllerName, actionName string, app interface{}) {
-// 	_c := reflect.New(reflect.TypeOf(EngineBaseController))
-// 	c.Controller = _c.Interface().(Controller)
-// 	c.Controller.Init(ctx, controllerName, actionName, app)
-// 	c.NoAuthAction = *new([]string)
-// 	c.CDNStatic = utils.GetenvFromConfig("cdn_static", "").(string)
-// }
-
 // Prepare 前期准备
-func (c *BaseController) Prepare() {
+func (c *GEABaseController) Prepare() {
 	c.PageSize = 20
-	controllerName := c.Controller.GetController()
-	actionName := c.Controller.GetAction()
-	c.ControllerName = strings.ToLower(controllerName[0 : len(controllerName)-10])
-	c.ActionName = strings.ToLower(actionName)
-	// c.Data["version"], _ = beego.AppConfig.String("version")
-	// c.Data["siteName"], _ = beego.AppConfig.String("site.name")
+	c.SetData("version", geaconfig.GEAConfig().Version)
+	c.SetData("sitename", geaconfig.GEAConfig().SiteName)
 
 	prefix := ""
 	if c.Instance != nil {
 		prefix = c.Instance.Prefix()
 	}
-	c.Data["prefix"] = prefix
-	c.Data["path"] = c.ControllerName
-	c.Data["pkField"] = ""
-	c.Data["CDNStatic"] = c.CDNStatic
 
-	if (strings.Compare(c.ControllerName, "apidoc")) != 0 {
-		// strings.Split(c.Ctx().Request.URL.Path[1:], "/")[0]
+	c.SetData("prefix", prefix)
+	c.SetData("path", c.ControllerName())
+	c.SetData("pkField", "")
+	c.SetData("CDNStatic", c.CDNStatic)
+
+	if (strings.Compare(c.ControllerName(), "apidoc")) != 0 {
 		if utils.Contain(c.Ctx().APIVersion(), &APIVersion) {
 			if APIAuthFunc != nil {
 				noAuth := false
 				for _, action := range c.NoAuthAction {
-					if strings.ToLower(action) == c.ActionName {
+					if strings.ToLower(action) == c.ActionName() {
 						noAuth = true
 					}
 				}
@@ -150,14 +141,17 @@ func (c *BaseController) Prepare() {
 		} else {
 			c.auth()
 			if c.User != nil {
-				c.Data["loginUserName"] = fmt.Sprintf("%s(%s)", c.User.RealName, c.User.UserName)
+				c.SetData(
+					"loginUserName",
+					fmt.Sprintf("%s(%s)", c.User.RealName, c.User.UserName),
+				)
 			}
 		}
 	}
 }
 
 // auth 登录权限验证
-func (c *BaseController) auth() {
+func (c *GEABaseController) auth() {
 	arr := strings.Split(c.GetCookie("auth"), "|")
 	if len(arr) == 2 {
 		idStr, password := arr[0], arr[1]
@@ -217,7 +211,7 @@ func (c *BaseController) auth() {
 
 			//不需要权限检查
 			noAuth := `login/logout/getnodes/start/show/ajaxapisave/index/group/public/env/code/apidetail`
-			isNoAuth := strings.Contains(noAuth, c.ActionName)
+			isNoAuth := strings.Contains(noAuth, c.ActionName())
 
 			cr := new([]geamodels.CasbinRule)
 			o := orm.NewOrm()
@@ -248,22 +242,22 @@ func (c *BaseController) auth() {
 		}
 	}
 
-	if (c.User == nil || c.User.ID == 0) && (c.ControllerName != "login" || c.ActionName != "login") {
+	if (c.User == nil || c.User.ID == 0) && (c.ControllerName() != "login" || c.ActionName() != "login") {
 		c.redirect("/login")
 	}
 }
 
 // SideTreeAuth Admin 授权验证
-func (c *BaseController) SideTreeAuth() {
+func (c *GEABaseController) SideTreeAuth() {
 	sideTree, found := cache.DefaultMemCache().Get(fmt.Sprintf("SideTree%d", c.User.ID))
 	if found && sideTree != nil { //从缓存取菜单
 		sideTree := sideTree.(*[]SideNode)
-		c.Data["SideTree"] = sideTree
+		c.SetData("SideTree", sideTree)
 	} else {
 		// 左侧导航栏
 		casbinRoles := geamodels.AdminPathPermissions()
 		sideTree := SideTree(casbinRoles)
-		c.Data["SideTree"] = sideTree
+		c.SetData("SideTree", sideTree)
 		cache.DefaultMemCache().Set(
 			fmt.Sprintf("SideTree%d", c.User.ID),
 			sideTree,
@@ -273,58 +267,60 @@ func (c *BaseController) SideTreeAuth() {
 }
 
 // GetClientIP 获取用户 IP 地址
-func (c *BaseController) GetClientIP() string {
+func (c *GEABaseController) GetClientIP() string {
 	s := c.Ctx().RequestRemoteAddr()
 	l := strings.LastIndex(s, ":")
 	return s[0:l]
 }
 
 // Redirect 重定向
-func (c *BaseController) redirect(url string) {
-	c.Controller.Redirect(url, 302)
+func (c *GEABaseController) redirect(url string) {
+	c.GEAController.Redirect(url, 302)
 	c.StopRun()
 }
 
 // Display 加载模板
-func (c *BaseController) Display(tpl ...string) {
+func (c *GEABaseController) Display(tpl ...string) {
 	var name string
 	if len(tpl) > 0 {
 		name = strings.Join([]string{tpl[0], "html"}, ".")
 	} else {
-		name = c.ControllerName + "/" + c.ActionName + ".html"
+		if c.GEAController != nil {
+			name = c.ControllerName() + "/" + c.ActionName() + ".html"
+		}
 	}
-	c.Layout = "public/layout.html"
-	c.TplName = name
+	c.SetLayout("public/layout.html")
+	c.SetTplName(name)
 }
 
 // AjaxMsg ajax返回
-func (c *BaseController) AjaxMsg(msg interface{}, msgNo int) {
+func (c *GEABaseController) AjaxMsg(msg interface{}, msgNo int) {
 	out := make(map[string]interface{})
 	out["status"] = msgNo
 	out["message"] = msg
-	c.Data["json"] = out
+	c.SetData("json", out)
 	c.ServeJSON()
 	c.StopRun()
 }
 
 // AjaxData ajax返回
-func (c *BaseController) AjaxData(data interface{}, msgNo int) {
+func (c *GEABaseController) AjaxData(data interface{}, msgNo int) {
 	out := make(map[string]interface{})
 	out["status"] = msgNo
 	out["data"] = data
-	c.Data["json"] = out
+	c.SetData("json", out)
 	c.ServeJSON()
 	c.StopRun()
 }
 
 // AjaxList ajax返回 列表
-func (c *BaseController) AjaxList(msg interface{}, msgNo int, count int64, data interface{}) {
+func (c *GEABaseController) AjaxList(msg interface{}, msgNo int, count int64, data interface{}) {
 	out := make(map[string]interface{})
 	out["code"] = msgNo
 	out["msg"] = msg
 	out["count"] = count
 	out["data"] = data
-	c.Data["json"] = out
+	c.SetData("json", out)
 	c.ServeJSON()
 	c.StopRun()
 }
@@ -340,7 +336,7 @@ type FilePresign struct {
 }
 
 // FilePresign 文件授权
-func (c *BaseController) FilePresign(method string, paths []string) {
+func (c *GEABaseController) FilePresign(method string, paths []string) {
 	method = strings.ToUpper(method)
 	if method == "GET" {
 		filePresign := FilePresign{}
@@ -356,7 +352,7 @@ func (c *BaseController) FilePresign(method string, paths []string) {
 			}
 		}
 		filePresign.Code = 0
-		c.Data["json"] = filePresign
+		c.SetData("json", filePresign)
 		c.ServeJSON()
 	} else if method == "PUT" {
 		if url, err := utils.PresignRequest(method, paths[0]); err != nil {
@@ -369,7 +365,7 @@ func (c *BaseController) FilePresign(method string, paths []string) {
 				filePresign.Data,
 				filePresignData{Path: paths[0], URL: url},
 			)
-			c.Data["json"] = filePresign
+			c.SetData("json", filePresign)
 			c.ServeJSON()
 		}
 	} else if method == "POST" {
@@ -383,7 +379,7 @@ func (c *BaseController) FilePresign(method string, paths []string) {
 				filePresign.Data,
 				filePresignData{Path: paths[0], URL: url},
 			)
-			c.Data["json"] = filePresign
+			c.SetData("json", filePresign)
 			c.ServeJSON()
 		}
 	}

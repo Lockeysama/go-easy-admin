@@ -1,8 +1,14 @@
-package geacontrollers
+package admincontrollers
+
+import (
+	basecontrollers "github.com/lockeysama/go-easy-admin/beego_adapt/controllers/base"
+	geacontrollers "github.com/lockeysama/go-easy-admin/geadmin/controllers"
+)
 
 // AdminBaseController 管理面板基础类
 type AdminBaseController struct {
-	ManageBaseController
+	basecontrollers.AdaptController
+	Admin geacontrollers.GEAManageBaseController
 }
 
 // Prefix 前缀

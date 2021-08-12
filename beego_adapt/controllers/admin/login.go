@@ -1,4 +1,4 @@
-package geacontrollers
+package admincontrollers
 
 import (
 	"crypto/md5"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/beego/beego/v2/client/orm"
 
+	basecontrollers "github.com/lockeysama/go-easy-admin/beego_adapt/controllers/base"
 	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
 
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
@@ -15,14 +16,14 @@ import (
 
 // LoginController
 type LoginController struct {
-	BaseController
+	basecontrollers.AdaptController
 }
 
 // Login 登录
 // TODO:XSRF过滤
 func (c *LoginController) Login() {
 	if c.User != nil && c.User.ID > 0 {
-		c.redirect("/home")
+		// c.GEABaseController.redirect("/home")
 		return
 	}
 	// beego.ReadFromRequest(&c.Controller)
@@ -71,21 +72,21 @@ func (c *LoginController) Login() {
 				authkey := fmt.Sprintf("%x", hash.Sum(nil))
 				c.SetCookie("auth", fmt.Sprintf("%d|%s", user.ID, authkey), 7*86400)
 
-				c.redirect("/home")
+				// c.redirect("/home")
 			}
 			fmt.Println(errorMsg)
 			// flash.Error(errorMsg)
 			// flash.Store(&c.Controller)
-			c.redirect("/login")
+			// c.redirect("/login")
 		}
 	}
-	c.TplName = "login/login.html"
+	c.Controller.TplName = "login/login.html"
 }
 
 // Logout 登出
 func (c *LoginController) Logout() {
 	c.SetCookie("auth", "")
-	c.redirect("/login")
+	// c.redirect("/login")
 }
 
 // NoAuth 无权限

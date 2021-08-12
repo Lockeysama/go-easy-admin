@@ -1,57 +1,14 @@
-package geaadapt
+package basecontrollers
 
 import (
 	"mime/multipart"
 	"net/url"
 	"strings"
 
-	"github.com/beego/beego/v2/server/web/context"
-
 	beego "github.com/beego/beego/v2/server/web"
-
-	"github.com/lockeysama/go-easy-admin/geadmin"
+	"github.com/beego/beego/v2/server/web/context"
 	geacontrollers "github.com/lockeysama/go-easy-admin/geadmin/controllers"
 )
-
-// Beego
-func InitEngine() {
-	geadmin.InitEngine(geadmin.Beego, &AdaptController{})
-
-	GEARouters := geadmin.Routers()
-
-	for routerType, routers := range GEARouters {
-		for _, _router := range routers {
-			router := _router.([]interface{})
-			switch routerType {
-			case geadmin.Router:
-				if len(router) != 3 {
-					panic("router exception")
-				}
-				controller := router[1].(geacontrollers.Controller)
-				controller.SetEngine(&AdaptController{})
-				// controller := router[1].(beego.ControllerInterface)
-				beego.Router(
-					router[0].(string),
-					controller.(beego.ControllerInterface),
-					router[2].(string),
-				)
-			case geadmin.AutoRouter:
-				group := router[0].(string)
-				linkNamespaces := []beego.LinkNamespace{}
-				for _, linkNamespace := range router[1].([]interface{}) {
-					linkNamespaces = append(
-						linkNamespaces,
-						beego.NSAutoRouter(linkNamespace.(beego.ControllerInterface)),
-					)
-				}
-				beego.AddNamespace(beego.NewNamespace(
-					group,
-					linkNamespaces...,
-				))
-			}
-		}
-	}
-}
 
 type BeegoContext context.Context
 
@@ -93,15 +50,16 @@ func (ctx *BeegoContext) RequestRemoteAddr() string {
 
 type AdaptController struct {
 	beego.Controller
-	geacontrollers.BaseController
+	geacontrollers.GEABaseController
 }
 
 func (c *AdaptController) Init(ctx *context.Context, controllerName string, actionName string, app interface{}) {
+	c.GEABaseController.GEAController = c
 	c.Controller.Init(ctx, controllerName, actionName, app)
 }
 
-func (c *AdaptController) SetEngine(controller geacontrollers.Controller) {
-	c.BaseController.Controller = controller
+func (c *AdaptController) SetEngine(controller geacontrollers.GEAController) {
+	c.GEABaseController.GEAController = controller
 }
 
 func (c *AdaptController) Ctx() geacontrollers.Context {
@@ -204,4 +162,29 @@ func (c *AdaptController) HandlerFunc(fnname string) bool {
 
 func (c *AdaptController) URLMapping() {
 	c.Controller.URLMapping()
+}
+
+func (c *AdaptController) SetData(dataType interface{}, data interface{}) {
+	c.Data[dataType] = data
+}
+
+func (c *AdaptController) GetData() map[interface{}]interface{} {
+	return c.Data
+}
+
+func (c *AdaptController) SetLayout(layout string) {
+	c.Layout = layout
+}
+
+func (c *AdaptController) SetTplName(tplName string) {
+	c.TplName = tplName
+}
+
+func (c *AdaptController) ControllerName() string {
+	ctrl := c.GetController()
+	return strings.ToLower(ctrl[0 : len(ctrl)-10])
+}
+
+func (c *AdaptController) ActionName() string {
+	return strings.ToLower(c.GetAction())
 }

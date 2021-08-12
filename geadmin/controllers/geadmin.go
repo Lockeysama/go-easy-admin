@@ -14,8 +14,8 @@ import (
 )
 
 // ManageBaseController 控制器管理基类
-type ManageBaseController struct {
-	BaseController
+type GEAManageBaseController struct {
+	GEABaseController
 	Model     geamodels.Model
 	PageTitle string
 }
@@ -28,24 +28,24 @@ type ManageBaseController struct {
 // }
 
 // PrefixIcon 管理界面一级侧栏图标（https://www.layui.com/doc/element/icon.html）
-func (c *ManageBaseController) PrefixIcon() string {
+func (c *GEAManageBaseController) PrefixIcon() string {
 	return ""
 }
 
 // AdminIcon 管理界面二级侧栏图标（https://www.layui.com/doc/element/icon.html）
-func (c *ManageBaseController) AdminIcon() string {
+func (c *GEAManageBaseController) AdminIcon() string {
 	return ""
 }
 
 // List 管理后台列表模板渲染
-func (c *ManageBaseController) makeListPK(items *[]DisplayItem) {
+func (c *GEAManageBaseController) makeListPK(items *[]DisplayItem) {
 	for _, item := range *items {
 		if item.PK == "true" {
-			c.Data["pkField"] = item.Field
+			c.SetData("pkField", item.Field)
 		}
 	}
-	if c.Data["pkField"] == "" {
-		c.Data["pkField"] = (*items)[0].Field
+	if c.GetData()["pkField"] == "" {
+		c.SetData("pkField", (*items)[0].Field)
 	}
 }
 
@@ -97,8 +97,8 @@ func DeepCopy(dst, src interface{}) error {
 }
 
 // Add 管理后台新增模板渲染
-func (c *ManageBaseController) Add() {
-	c.Data["pageTitle"] = "新增"
+func (c *GEAManageBaseController) Add() {
+	c.SetData("pageTitle", "新增")
 	items := c.DisplayItems(c.Model)
 	c.makeListPK(items)
 	linkItemsMap := map[string][]map[string]interface{}{}
@@ -118,24 +118,25 @@ func (c *ManageBaseController) Add() {
 			linkItemsMap[item.Field] = linksMap
 		}
 	}
-	c.Data["linkItems"] = linkItemsMap
-	c.Data["display"] = items
-	c.Layout = "public/layout.html"
-	c.TplName = "public/add.html"
+	c.SetData("linkItems", linkItemsMap)
+	c.SetData("linkItems", items)
+	c.SetLayout("public/layout.html")
+	c.SetTplName("public/add.html")
+
 }
 
 // List 管理后台列表模板渲染
-func (c *ManageBaseController) List() {
-	c.Data["pageTitle"] = "列表"
+func (c *GEAManageBaseController) List() {
+	c.SetData("pageTitle", "列表")
 	items := c.DisplayItems(c.Model)
-	c.Data["display"] = items
+	c.SetData("display", items)
 	c.makeListPK(items)
-	c.Layout = "public/layout.html"
-	c.TplName = "public/list.html"
+	c.SetLayout("public/layout.html")
+	c.SetTplName("public/list.html")
 }
 
 // Table 获取管理后台列表数据
-func (c *ManageBaseController) Table() {
+func (c *GEAManageBaseController) Table() {
 	// 列表
 	page, err := strconv.Atoi(c.Ctx().InputParam("page"))
 	if err != nil {
@@ -195,7 +196,7 @@ func (c *ManageBaseController) Table() {
 	}
 }
 
-func (c *ManageBaseController) ListFilter() map[string]interface{} {
+func (c *GEAManageBaseController) ListFilter() map[string]interface{} {
 	queryStr := c.Ctx().InputQuery("query")
 	if queryStr == "" {
 		c.AjaxMsg("请输入查询条件", MSG_ERR)
@@ -256,13 +257,13 @@ func (c *ManageBaseController) ListFilter() map[string]interface{} {
 }
 
 // Edit 管理后台编辑模板渲染
-func (c *ManageBaseController) Edit() {
-	c.Data["pageTitle"] = "编辑"
+func (c *GEAManageBaseController) Edit() {
+	c.SetData("pageTitle", "编辑")
 
 	gp := c.DisplayItems(c.Model)
 	c.makeListPK(gp)
 
-	field := c.Data["pkField"].(string)
+	field := c.GetData()["pkField"].(string)
 	value := c.Ctx().InputQuery(field)
 
 	filters := map[string]interface{}{field: value}
@@ -316,17 +317,17 @@ func (c *ManageBaseController) Edit() {
 				(*gp)[i].Value = v.FieldByName(item.Field).Interface()
 			}
 		}
-		c.Data["linkItems"] = linkItemsMap
+		c.SetData("linkItems", linkItemsMap)
 	}
 
-	c.Data["display"] = gp
-	c.Layout = "public/layout.html"
-	c.TplName = "public/edit.html"
+	c.SetData("display", gp)
+	c.SetLayout("public/layout.html")
+	c.SetTplName("public/edit.html")
 }
 
 // Detail 管理后台编辑模板渲染
-func (c *ManageBaseController) Detail() {
-	c.Data["pageTitle"] = " 详情"
+func (c *GEAManageBaseController) Detail() {
+	c.SetData("pageTitle", "详情")
 
 	gp := c.DisplayItems(c.Model)
 	c.makeListPK(gp)
@@ -392,13 +393,13 @@ func (c *ManageBaseController) Detail() {
 						(*detailDisplayItems)[i].Value = v.FieldByName(detailItem.Field).Interface()
 					}
 				}
-				c.Data["linkItems"] = linkItemsMap
+				c.SetData("linkItems", linkItemsMap)
 			}
 			// break
 		}
 	}
 
-	c.Data["display"] = detailDisplayItems
-	c.Layout = "public/layout.html"
-	c.TplName = "public/detail.html"
+	c.SetData("display", detailDisplayItems)
+	c.SetLayout("public/layout.html")
+	c.SetTplName("public/detail.html")
 }

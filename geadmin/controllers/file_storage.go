@@ -19,7 +19,7 @@ import (
 )
 
 // AjaxUpload 上传文件
-func (c *ManageBaseController) AjaxUpload() {
+func (c *GEAManageBaseController) AjaxUpload() {
 	fh := c.Ctx().RequestMultipartForm().File["file"][0]
 	file, _ := fh.Open()
 
@@ -102,7 +102,7 @@ func (c *ManageBaseController) AjaxUpload() {
 }
 
 // AjaxGetFile 上传文件
-func (c *ManageBaseController) AjaxGetFile() {
+func (c *GEAManageBaseController) AjaxGetFile() {
 	if c.User == nil && c.APIUser == nil {
 		c.AjaxMsg("get file failed", MSG_ERR)
 		return

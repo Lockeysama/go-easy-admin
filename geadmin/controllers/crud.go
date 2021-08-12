@@ -14,7 +14,7 @@ import (
 )
 
 // QueryCount 修改数据
-func (c *ManageBaseController) QueryCount(model geamodels.Model, filters map[string]interface{}) (int64, error) {
+func (c *GEAManageBaseController) QueryCount(model geamodels.Model, filters map[string]interface{}) (int64, error) {
 	o := orm.NewOrm()
 	qs := o.QueryTable(model)
 	for field := range filters {
@@ -25,7 +25,7 @@ func (c *ManageBaseController) QueryCount(model geamodels.Model, filters map[str
 }
 
 // QueryList 修改数据
-func (c *ManageBaseController) QueryListWithRawFilter(
+func (c *GEAManageBaseController) QueryListWithRawFilter(
 	model geamodels.Model, page int, limit int, filters string, loadRel bool,
 ) interface{} {
 	lists := reflect.New(reflect.SliceOf(reflect.TypeOf(model))).Interface()
@@ -75,7 +75,7 @@ func (c *ManageBaseController) QueryListWithRawFilter(
 }
 
 // QueryList 修改数据
-func (c *ManageBaseController) QueryList(
+func (c *GEAManageBaseController) QueryList(
 	model geamodels.Model,
 	page int, limit int,
 	filters map[string]interface{},
@@ -144,7 +144,7 @@ func (c *ManageBaseController) QueryList(
 }
 
 // QueryRow 修改数据
-func (c *ManageBaseController) QueryRow(
+func (c *GEAManageBaseController) QueryRow(
 	model geamodels.Model, filters map[string]interface{}, loadRel bool,
 ) interface{} {
 	row := reflect.New(reflect.TypeOf(model).Elem()).Interface()
@@ -187,7 +187,7 @@ func (c *ManageBaseController) QueryRow(
 }
 
 // AjaxSave 修改数据
-func (c *ManageBaseController) AjaxSave() {
+func (c *GEAManageBaseController) AjaxSave() {
 	params := map[string]interface{}{}
 	displayItems := c.DisplayItems(c.Model)
 	c.makeListPK(displayItems)
@@ -267,7 +267,7 @@ func (c *ManageBaseController) AjaxSave() {
 	}
 	items := c.DisplayItems(c.Model)
 	c.makeListPK(items)
-	if pk, ok := params[c.Data["pkField"].(string)]; ok && pk != nil {
+	if pk, ok := params[c.GetData()["pkField"].(string)]; ok && pk != nil {
 		err := c.updateData(pk, displayItems, &params)
 		if err != nil {
 			c.AjaxMsg(err.Error(), MSG_ERR)
@@ -284,7 +284,7 @@ func (c *ManageBaseController) AjaxSave() {
 	c.AjaxMsg("成功", MSG_OK)
 }
 
-func (c *ManageBaseController) addData(displayItems *[]DisplayItem, params *map[string]interface{}) error {
+func (c *GEAManageBaseController) addData(displayItems *[]DisplayItem, params *map[string]interface{}) error {
 	o := orm.NewOrm()
 	err := o.DoTx(func(ctx context.Context, txOrm orm.TxOrmer) error {
 		r := reflect.New(reflect.TypeOf(c.Model).Elem()).Interface()
@@ -311,8 +311,8 @@ func (c *ManageBaseController) addData(displayItems *[]DisplayItem, params *map[
 				}
 			case "ForeignKey", "O2O":
 				if index, ok := (*params)[item.Field]; ok {
-					rIndex := reflect.ValueOf(r).Elem().FieldByName(c.Data["pkField"].(string)).Interface()
-					qs := txOrm.QueryTable(c.Model).Filter(c.Data["pkField"].(string), rIndex)
+					rIndex := reflect.ValueOf(r).Elem().FieldByName(c.GetData()["pkField"].(string)).Interface()
+					qs := txOrm.QueryTable(c.Model).Filter(c.GetData()["pkField"].(string), rIndex)
 					// target := reflect.New(reflect.TypeOf(item.Model).Elem()).Interface()
 					// txOrm.QueryTable(item.Model).Filter(item.Index, index).One(target)
 					if _, err := qs.Update(map[string]interface{}{item.Field: index}); err != nil {
@@ -326,10 +326,10 @@ func (c *ManageBaseController) addData(displayItems *[]DisplayItem, params *map[
 	return err
 }
 
-func (c *ManageBaseController) updateData(pk interface{}, displayItems *[]DisplayItem, params *map[string]interface{}) error {
+func (c *GEAManageBaseController) updateData(pk interface{}, displayItems *[]DisplayItem, params *map[string]interface{}) error {
 	o := orm.NewOrm()
 	err := o.DoTx(func(ctx context.Context, txOrm orm.TxOrmer) error {
-		qs := txOrm.QueryTable(c.Model).Filter(c.Data["pkField"].(string), pk)
+		qs := txOrm.QueryTable(c.Model).Filter(c.GetData()["pkField"].(string), pk)
 		r := reflect.New(reflect.TypeOf(c.Model).Elem()).Interface()
 		qs.One(r)
 		for _, item := range *displayItems {
@@ -362,10 +362,10 @@ func (c *ManageBaseController) updateData(pk interface{}, displayItems *[]Displa
 }
 
 // AjaxDel 删除数据
-func (c *ManageBaseController) AjaxDel() {
+func (c *GEAManageBaseController) AjaxDel() {
 	items := c.DisplayItems(c.Model)
 	c.makeListPK(items)
-	field := c.Data["pkField"].(string)
+	field := c.GetData()["pkField"].(string)
 	value := c.Ctx().InputQuery(field)
 	params := map[string]interface{}{field: value}
 	for key := range params {

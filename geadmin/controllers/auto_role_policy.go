@@ -11,7 +11,7 @@ import (
 // ControllerRolePolicy CasbinRule
 type ControllerRolePolicy interface {
 	// beego.ControllerInterface
-	Controller
+	// Controller
 	DBModel() geamodels.Model
 	Prefix() string
 	PrefixAlias() string
@@ -24,32 +24,32 @@ type ControllerRolePolicy interface {
 }
 
 // Prefix 前缀
-func (c *BaseController) Prefix() string {
+func (c *GEABaseController) Prefix() string {
 	return "/"
 }
 
 // PrefixAlias 前缀别名
-func (c *BaseController) PrefixAlias() string {
+func (c *GEABaseController) PrefixAlias() string {
 	return ""
 }
 
 // AdminName 自定义控制器名称（默认使用控制器名称 Controller 的前面部分）
-func (c *BaseController) AdminName() string {
+func (c *GEABaseController) AdminName() string {
 	return ""
 }
 
 // AdminNameAlias 自定义控制器名称（默认使用控制器名称 Controller 的前面部分）
-func (c *BaseController) AdminNameAlias() string {
+func (c *GEABaseController) AdminNameAlias() string {
 	return ""
 }
 
 // AdminPathMethods 控制器 Admin 部分的请求函数（授权）
-func (c *BaseController) AdminPathMethods() []string {
+func (c *GEABaseController) AdminPathMethods() []string {
 	return []string{"list", "add", "update", "delete", "ajaxsave", "ajaxdel", "ajaxupload", "ajaxgetfile", "table", "edit"}
 }
 
 // RESTFulAPIPathMethods 控制器 RESTFul API 部分的请求函数（授权）
-func (c *BaseController) RESTFulAPIPathMethods() map[string][]string {
+func (c *GEABaseController) RESTFulAPIPathMethods() map[string][]string {
 	return map[string][]string{
 		"/":      {"get", "post"},
 		"/{id}/": {"get", "put", "patch", "delete"},

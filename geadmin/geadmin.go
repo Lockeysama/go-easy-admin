@@ -12,36 +12,9 @@ const (
 
 var EngineName EngineType
 
-func InitEngine(engineType EngineType, baseController geacontrollers.Controller) {
+func InitEngine(engineType EngineType, baseController geacontrollers.GEAController) {
 	EngineName = engineType
 	geacontrollers.EngineBaseController = baseController
-}
-
-type RouterType int8
-
-const (
-	Router RouterType = iota
-	AutoRouter
-)
-
-func Routers() map[RouterType][]interface{} {
-	return map[RouterType][]interface{}{
-		Router: {
-			[]interface{}{"/", &geacontrollers.APIDocController{}, "*:Index"},
-			[]interface{}{"/login", &geacontrollers.LoginController{}, "*:Login"},
-			[]interface{}{"/logout", &geacontrollers.LoginController{}, "*:Logout"},
-			[]interface{}{"/no_auth", &geacontrollers.LoginController{}, "*:NoAuth"},
-			[]interface{}{"/home", &geacontrollers.HomeController{}, "*:Index"},
-			[]interface{}{"/home/start", &geacontrollers.HomeController{}, "*:Start"},
-		},
-		AutoRouter: {
-			[]interface{}{"/admin", []interface{}{
-				AutoRegistryRouter(&geacontrollers.AdminController{}),
-				AutoRegistryRouter(&geacontrollers.RoleController{}),
-				AutoRegistryRouter(&geacontrollers.CasbinController{}),
-			}},
-		},
-	}
 }
 
 func AutoRegistryRouter(controller geacontrollers.ControllerRolePolicy) geacontrollers.ControllerRolePolicy {
