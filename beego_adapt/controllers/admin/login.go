@@ -10,9 +10,10 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 
 	basecontrollers "github.com/lockeysama/go-easy-admin/beego_adapt/controllers/base"
+	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
 
-	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
+	adminmodels "github.com/lockeysama/go-easy-admin/beego_adapt/models/admin"
 )
 
 // LoginController
@@ -23,7 +24,7 @@ type LoginController struct {
 // Login 登录
 // TODO:XSRF过滤
 func (c *LoginController) Login() {
-	if c.User != nil && c.User.ID > 0 {
+	if c.User != nil && c.User.GetID() > 0 {
 		c.Redirect("/home", 302)
 		return
 	}
@@ -33,7 +34,7 @@ func (c *LoginController) Login() {
 		password := strings.TrimSpace(c.RequestQuery("password"))
 
 		if username != "" && password != "" {
-			var user = new(geamodels.Admin)
+			var user = new(adminmodels.Admin)
 			o := orm.NewOrm()
 			query := o.QueryTable(user)
 			filters := map[string]interface{}{"username": username}

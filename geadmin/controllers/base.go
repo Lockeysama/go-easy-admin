@@ -58,7 +58,7 @@ type GEAController interface {
 type GEABaseController struct {
 	GEAController
 	NoAuthAction []string
-	User         *geamodels.Admin
+	User         geamodels.GEAdmin
 	APIUser      geamodels.Model
 	PageSize     int
 	CDNStatic    string
@@ -77,7 +77,7 @@ func (c *GEABaseController) Prepare() {
 
 // SideTreeAuth Admin 授权验证
 func (c *GEABaseController) SideTreeAuth() {
-	sideTree, found := cache.DefaultMemCache().Get(fmt.Sprintf("SideTree%d", c.User.ID))
+	sideTree, found := cache.DefaultMemCache().Get(fmt.Sprintf("SideTree%d", c.User.GetID()))
 	if found && sideTree != nil { //从缓存取菜单
 		sideTree := sideTree.(*[]SideNode)
 		c.SetData("SideTree", sideTree)
@@ -87,7 +87,7 @@ func (c *GEABaseController) SideTreeAuth() {
 		sideTree := SideTree(casbinRoles)
 		c.SetData("SideTree", sideTree)
 		cache.DefaultMemCache().Set(
-			fmt.Sprintf("SideTree%d", c.User.ID),
+			fmt.Sprintf("SideTree%d", c.User.GetID()),
 			sideTree,
 			cache.DefaultMemCacheExpiration,
 		)

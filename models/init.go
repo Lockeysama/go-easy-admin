@@ -10,7 +10,7 @@ import (
 
 	"github.com/beego/beego/v2/client/orm"
 
-	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
+	beegoadapt "github.com/lockeysama/go-easy-admin/beego_adapt"
 )
 
 func init() {
@@ -26,5 +26,5 @@ func init() {
 		fmt.Println(err)
 	}
 
-	geamodels.InitModels()
+	beegoadapt.InitGEAModelAdapt()
 }

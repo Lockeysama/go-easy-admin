@@ -3,6 +3,7 @@ package admincontrollers
 import (
 	"fmt"
 
+	adminmodels "github.com/lockeysama/go-easy-admin/beego_adapt/models/admin"
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 )
 
@@ -13,7 +14,7 @@ type AdminController struct {
 
 // DBModel 返回控制器对应的数据库模型
 func (c *AdminController) DBModel() geamodels.Model {
-	return &geamodels.Admin{}
+	return &adminmodels.Admin{}
 }
 
 // AdminNameAlias 设置控制器侧栏别名
@@ -34,7 +35,7 @@ func (c *AdminController) QueryList(
 	loadRel bool,
 ) interface{} {
 	l := c.GEAManageBaseController.QueryList(model, page, limit, filters, order, loadRel)
-	x := l.(*[]*geamodels.Admin)
+	x := l.(*[]*adminmodels.Admin)
 	fmt.Println(len(*x))
 	return x
 }

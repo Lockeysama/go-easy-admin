@@ -1,6 +1,7 @@
 package admincontrollers
 
 import (
+	adminmodels "github.com/lockeysama/go-easy-admin/beego_adapt/models/admin"
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 )
 
@@ -11,7 +12,7 @@ type RoleController struct {
 
 // DBModel 返回控制器对应的数据库模型
 func (c *RoleController) DBModel() geamodels.Model {
-	return &geamodels.Role{}
+	return &adminmodels.Role{}
 }
 
 // AdminNameAlias 设置控制器侧栏别名

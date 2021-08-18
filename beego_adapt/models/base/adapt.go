@@ -1,4 +1,4 @@
-package geamodels
+package basemodels
 
 type DBAdapt interface {
 }

@@ -7,15 +7,18 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/beego/beego/v2/client/orm"
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
 
 	"encoding/gob"
 	"encoding/json"
 	"reflect"
-
-	"github.com/beego/beego/v2/client/orm"
 )
+
+var AdminModel geamodels.GEAdmin
+
+var NoAuth = `login/logout/getnodes/start/show/ajaxapisave/index/group/public/env/code/apidetail`
 
 // ManageBaseController 控制器管理基类
 type GEAManageBaseController struct {
@@ -27,7 +30,7 @@ type GEAManageBaseController struct {
 
 // DBModel 返回控制器对应的数据库模型
 func (c *GEAManageBaseController) DBModel() geamodels.Model {
-	return &geamodels.Admin{}
+	return AdminModel
 }
 
 // Prepare 前期准备
@@ -72,7 +75,7 @@ func (c *GEAManageBaseController) Prepare() {
 	if c.User != nil {
 		c.SetData(
 			"loginUserName",
-			fmt.Sprintf("%s(%s)", c.User.RealName, c.User.UserName),
+			fmt.Sprintf("%s(%s)", c.User.GetRealName(), c.User.GetUserName()),
 		)
 	}
 	// }
@@ -463,74 +466,66 @@ func (c *GEAManageBaseController) auth() {
 		idStr, password := arr[0], arr[1]
 		userID, _ := strconv.Atoi(idStr)
 		if userID > 0 {
-			var err error
+			var (
+				user geamodels.GEAdmin
+				err  error
+			)
 
 			cacheUser, found := cache.DefaultMemCache().Get("uid" + strconv.Itoa(userID))
-			user := &geamodels.Admin{}
 			if found && cacheUser != nil { //从缓存取用户
-				user = cacheUser.(*geamodels.Admin)
+				user = cacheUser.(geamodels.GEAdmin)
 			} else {
-				o := orm.NewOrm()
-				query := o.QueryTable(user)
-				filters := map[string]interface{}{"id": userID}
-				for key := range filters {
-					query = query.Filter(key, filters[key])
-				}
-				if err := query.One(user); err != nil {
+				user = geamodels.GetGEAdminAdapter().QueryWithID(int64(userID))
+				if user == nil {
 					c.AjaxMsg("用户不存在", MSG_ERR)
 					return
 				}
 
-				adminRoles := new([]*geamodels.AdminRole)
-				if _, err := o.QueryTable(&geamodels.AdminRole{}).
-					Filter("admin_id", user.ID).
-					All(adminRoles); err != nil {
-					c.AjaxMsg("查询异常: "+err.Error(), MSG_ERR)
-					return
-				}
-				rolesID := []interface{}{}
-				for _, adminRole := range *adminRoles {
-					rolesID = append(rolesID, adminRole.RoleID)
-				}
-
-				roles := new([]*geamodels.Role)
-				if _, err := o.QueryTable(&geamodels.Role{}).
-					Filter("id__in", rolesID...).
-					All(roles); err != nil {
+				if adminRoles := geamodels.GetGEAdminRoleAdapter().
+					QueryWithID(user.GetID()); adminRoles == nil {
 					c.AjaxMsg("查询异常: "+err.Error(), MSG_ERR)
 					return
 				} else {
-					user.Roles = *roles
-					cache.DefaultMemCache().Set(
-						"uid"+strconv.Itoa(userID),
-						user,
-						cache.DefaultMemCacheExpiration,
-					)
+					rolesID := []int64{}
+					for _, adminRole := range adminRoles {
+						rolesID = append(rolesID, adminRole.GetGEARoleID())
+					}
+
+					if roles, err := geamodels.GetGEARoleAdapter().
+						QueryRoleWithID(rolesID...); err != nil {
+						c.AjaxMsg("查询异常: "+err.Error(), MSG_ERR)
+						return
+					} else {
+						user.SetRoles(roles)
+						cache.DefaultMemCache().Set(
+							"uid"+strconv.Itoa(userID),
+							user,
+							cache.DefaultMemCacheExpiration,
+						)
+					}
 				}
 			}
 			hash := md5.New()
-			hash.Write([]byte(user.Password + geamodels.Salt))
+			hash.Write([]byte(user.GetPassword() + geamodels.Salt))
 			if err == nil && password == fmt.Sprintf("%x", hash.Sum(nil)) {
 				c.User = user
 				c.SideTreeAuth()
 			}
 
 			//不需要权限检查
-			noAuth := `login/logout/getnodes/start/show/ajaxapisave/index/group/public/env/code/apidetail`
-			isNoAuth := strings.Contains(noAuth, c.ActionName())
+			isNoAuth := strings.Contains(NoAuth, c.ActionName())
 
 			cr := new([]geamodels.CasbinRule)
 			o := orm.NewOrm()
 			roles := []interface{}{}
-			for _, r := range user.Roles {
-				roles = append(roles, r.Name)
+			for _, r := range user.GetRoles() {
+				roles = append(roles, r.GetName())
 			}
 			isHasAuth := false
 			prefix := "/"
 			if c.Instance != nil {
 				prefix = c.Instance.Prefix()
 			}
-			fmt.Println("%s/%s/%s", prefix, c.ControllerName(), c.ActionName())
 
 			o.QueryTable(&geamodels.CasbinRule{}).
 				Filter("V0__in", roles...).
@@ -550,7 +545,8 @@ func (c *GEAManageBaseController) auth() {
 		}
 	}
 
-	if (c.User == nil || c.User.ID == 0) && (c.ControllerName() != "login" || c.ActionName() != "login") {
+	if (c.User == nil || c.User.GetID() == 0) &&
+		(c.ControllerName() != "login" || c.ActionName() != "login") {
 		c.redirect("/login")
 	}
 }

@@ -1,4 +1,4 @@
-package geamodels
+package basemodels
 
 import "time"
 
