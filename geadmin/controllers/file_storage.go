@@ -18,8 +18,68 @@ import (
 	blurhash "github.com/buckket/go-blurhash"
 )
 
+type filePresignData struct {
+	Path string
+	URL  string `json:"URL"`
+}
+
+type FilePresign struct {
+	Code int16
+	Data []filePresignData
+}
+
+// FilePresign 文件授权
+func (c *GEAdminBaseController) FilePresign(method string, paths []string) {
+	method = strings.ToUpper(method)
+	if method == "GET" {
+		filePresign := FilePresign{}
+		for _, path := range paths {
+			if url, err := utils.PresignRequest(method, path); err != nil {
+				c.RequestError(400, err.Error())
+				return
+			} else {
+				_filePresignData := filePresignData{}
+				_filePresignData.Path = path
+				_filePresignData.URL = url
+				filePresign.Data = append(filePresign.Data, _filePresignData)
+			}
+		}
+		filePresign.Code = 0
+		c.SetData("json", filePresign)
+		c.ServeJSON()
+	} else if method == "PUT" {
+		if url, err := utils.PresignRequest(method, paths[0]); err != nil {
+			c.RequestError(400, err.Error())
+			return
+		} else {
+			filePresign := FilePresign{}
+			filePresign.Code = 0
+			filePresign.Data = append(
+				filePresign.Data,
+				filePresignData{Path: paths[0], URL: url},
+			)
+			c.SetData("json", filePresign)
+			c.ServeJSON()
+		}
+	} else if method == "POST" {
+		if url, err := utils.PresignRequest(method, paths[0]); err != nil {
+			c.RequestError(400, err.Error())
+			return
+		} else {
+			filePresign := FilePresign{}
+			filePresign.Code = 0
+			filePresign.Data = append(
+				filePresign.Data,
+				filePresignData{Path: paths[0], URL: url},
+			)
+			c.SetData("json", filePresign)
+			c.ServeJSON()
+		}
+	}
+}
+
 // AjaxUpload 上传文件
-func (c *GEAManageBaseController) AjaxUpload() {
+func (c *GEAdminBaseController) AjaxUpload() {
 	fh := c.RequestMultipartForm().File["file"][0]
 	file, _ := fh.Open()
 
@@ -43,19 +103,19 @@ func (c *GEAManageBaseController) AjaxUpload() {
 		switch utils.FileExt(fh.Filename) {
 		case "png":
 			if loadedImage, err = png.Decode(f); err != nil {
-				c.APIRequestError(400, "生成 blur hash 失败, 图片文件解码失败")
+				c.RequestError(400, "生成 blur hash 失败, 图片文件解码失败")
 			}
 		case "jpg", "jpeg":
 			if loadedImage, err = jpeg.Decode(f); err != nil {
-				c.APIRequestError(400, "生成 blur hash 失败, 图片文件解码失败")
+				c.RequestError(400, "生成 blur hash 失败, 图片文件解码失败")
 			}
 		default:
-			c.APIRequestError(400, "生成 blur hash 失败; 当前只 png、jpg/jpeg 图片格式")
+			c.RequestError(400, "生成 blur hash 失败; 当前只 png、jpg/jpeg 图片格式")
 			return
 		}
 
 		if str, err := blurhash.Encode(5, 5, loadedImage); err != nil {
-			c.APIRequestError(400, "生成 blur hash 失败")
+			c.RequestError(400, "生成 blur hash 失败")
 			return
 		} else {
 			input := []byte(str)
@@ -102,7 +162,7 @@ func (c *GEAManageBaseController) AjaxUpload() {
 }
 
 // AjaxGetFile 上传文件
-func (c *GEAManageBaseController) AjaxGetFile() {
+func (c *GEAdminBaseController) AjaxGetFile() {
 	if c.User == nil && c.APIUser == nil {
 		c.AjaxMsg("get file failed", MSG_ERR)
 		return

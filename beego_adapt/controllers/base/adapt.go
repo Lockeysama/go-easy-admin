@@ -12,12 +12,11 @@ import (
 
 type AdaptController struct {
 	beego.Controller
-	geacontrollers.GEAManageBaseController
+	geacontrollers.GEAdminBaseController
 }
 
 func (c *AdaptController) Init(ctx *context.Context, controllerName string, actionName string, app interface{}) {
-	c.GEAManageBaseController.GEAController = app.(geacontrollers.GEAController)
-	c.GEAManageBaseController.Instance = app.(geacontrollers.ControllerRolePolicy)
+	c.Adapter(app)
 	c.Controller.Init(ctx, controllerName, actionName, app)
 }
 
@@ -89,7 +88,7 @@ func (c *AdaptController) StopRun() {
 
 func (c *AdaptController) Prepare() {
 	c.Controller.Prepare()
-	c.GEAManageBaseController.Prepare()
+	c.GEAdminBaseController.Prepare()
 }
 
 func (c *AdaptController) SetData(dataType interface{}, data interface{}) {
@@ -118,5 +117,5 @@ func (c *AdaptController) ActionName() string {
 }
 
 func (c *AdaptController) List() {
-	c.GEAManageBaseController.List()
+	c.GEAdminBaseController.List()
 }

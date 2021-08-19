@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"crypto/md5"
 	"fmt"
+	"mime/multipart"
+	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/beego/beego/v2/client/orm"
+	geaconfig "github.com/lockeysama/go-easy-admin/geadmin/config"
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
 
@@ -20,27 +22,81 @@ var AdminModel geamodels.GEAdmin
 
 var NoAuth = `login/logout/getnodes/start/show/ajaxapisave/index/group/public/env/code/apidetail`
 
+type GEAController interface {
+	Prepare()
+
+	GetCookie(string) string
+	SetCookie(string, string, ...interface{})
+
+	RequestURL() *url.URL
+	RequestMethod() string
+
+	RequestQuery(string) string
+	RequestParam(string) string
+	RequestBody() []byte
+
+	RequestForm() url.Values
+	RequestMultipartForm() *multipart.Form
+
+	Redirect(url string, code int)
+
+	ServeJSON(encoding ...bool)
+	CustomAbort(status int, body string)
+
+	StopRun()
+
+	SetData(dataType interface{}, data interface{})
+	GetData() map[interface{}]interface{}
+
+	SetLayout(layoutName string)
+	SetTplName(layoutName string)
+
+	GetController() string
+	GetAction() string
+
+	ControllerName() string
+	ActionName() string
+}
+
 // ManageBaseController 控制器管理基类
-type GEAManageBaseController struct {
-	GEABaseController
-	Instance  ControllerRolePolicy
-	Model     geamodels.Model
-	PageTitle string
+type GEAdminBaseController struct {
+	GEAController
+	GEADataBase
+	GEARolePolicy
+	NoAuthAction []string
+	User         geamodels.GEAdmin
+	APIUser      geamodels.Model
+	PageSize     int
+	CDNStatic    string
+	Model        geamodels.Model
+	PageTitle    string
+}
+
+func (c *GEAdminBaseController) Adapter(controller interface{}) {
+	c.GEAController = controller.(GEAController)
+	c.GEADataBase = controller.(GEADataBase)
+	c.GEARolePolicy = controller.(GEARolePolicy)
 }
 
 // DBModel 返回控制器对应的数据库模型
-func (c *GEAManageBaseController) DBModel() geamodels.Model {
+func (c *GEAdminBaseController) DBModel() geamodels.Model {
 	return AdminModel
 }
 
 // Prepare 前期准备
-func (c *GEAManageBaseController) Prepare() {
-	c.GEABaseController.Prepare()
-	c.Model = c.Instance.DBModel()
+func (c *GEAdminBaseController) Prepare() {
+	c.PageSize = 20
+	c.SetData("version", geaconfig.GEAConfig().Version)
+	c.SetData("sitename", geaconfig.GEAConfig().SiteName)
+
+	c.SetData("path", c.ControllerName())
+	c.SetData("pkField", "")
+	c.SetData("CDNStatic", c.CDNStatic)
 
 	prefix := ""
-	if c.Instance != nil {
-		prefix = c.Instance.Prefix()
+	if c.GEARolePolicy != nil {
+		c.Model = c.GEARolePolicy.DBModel()
+		prefix = c.GEARolePolicy.Prefix()
 	}
 
 	c.SetData("prefix", prefix)
@@ -61,7 +117,7 @@ func (c *GEAManageBaseController) Prepare() {
 	// 			if err := APIAuthFunc(c); err != nil {
 	// 				actions := []interface{}{"getall", "get", "put", "post", "delete"}
 	// 				if utils.Contain(c.ActionName, &actions) {
-	// 					c.APIRequestError(401, err.Error())
+	// 					c.RequestError(401, err.Error())
 	// 				} else {
 	// 					c.AjaxMsg(err.Error(), MSG_ERR)
 	// 				}
@@ -82,18 +138,14 @@ func (c *GEAManageBaseController) Prepare() {
 	// }
 }
 
-// PrefixIcon 管理界面一级侧栏图标（https://www.layui.com/doc/element/icon.html）
-func (c *GEAManageBaseController) PrefixIcon() string {
-	return ""
-}
-
-// AdminIcon 管理界面二级侧栏图标（https://www.layui.com/doc/element/icon.html）
-func (c *GEAManageBaseController) AdminIcon() string {
-	return ""
+// Redirect 重定向
+func (c *GEAdminBaseController) redirect(url string) {
+	c.GEAController.Redirect(url, 302)
+	c.StopRun()
 }
 
 // List 管理后台列表模板渲染
-func (c *GEAManageBaseController) makeListPK(items *[]DisplayItem) {
+func (c *GEAdminBaseController) makeListPK(items *[]DisplayItem) {
 	for _, item := range *items {
 		if item.PK == "true" {
 			c.SetData("pkField", item.Field)
@@ -152,14 +204,14 @@ func DeepCopy(dst, src interface{}) error {
 }
 
 // Add 管理后台新增模板渲染
-func (c *GEAManageBaseController) Add() {
+func (c *GEAdminBaseController) Add() {
 	c.SetData("pageTitle", "新增")
 	items := c.DisplayItems(c.Model)
 	c.makeListPK(items)
 	linkItemsMap := map[string][]map[string]interface{}{}
 	for _, item := range *items {
 		if item.DBType == "M2M" || item.DBType == "O2O" || item.DBType == "ForeignKey" {
-			linkItems := c.QueryList(item.Model, 0, 0, nil, nil, false)
+			linkItems := c.GEADataBaseQueryList(item.Model, 0, 0, nil, nil, false)
 			linkValue := reflect.ValueOf(linkItems).Elem()
 			linksMap := []map[string]interface{}{}
 			for i := 0; i < linkValue.Len(); i++ {
@@ -181,7 +233,7 @@ func (c *GEAManageBaseController) Add() {
 }
 
 // List 管理后台列表模板渲染
-func (c *GEAManageBaseController) List() {
+func (c *GEAdminBaseController) List() {
 	c.SetData("pageTitle", "列表")
 	items := c.DisplayItems(c.Model)
 	c.SetData("display", items)
@@ -191,7 +243,7 @@ func (c *GEAManageBaseController) List() {
 }
 
 // Table 获取管理后台列表数据
-func (c *GEAManageBaseController) Table() {
+func (c *GEAdminBaseController) Table() {
 	// 列表
 	page, err := strconv.Atoi(c.RequestParam("page"))
 	if err != nil {
@@ -218,9 +270,9 @@ func (c *GEAManageBaseController) Table() {
 
 	if query != "" {
 		listFilter = c.ListFilter()
-		lists = c.QueryList(c.Model, page, limit, listFilter, listOrderBy, true)
+		lists = c.GEADataBaseQueryList(c.Model, page, limit, listFilter, listOrderBy, true)
 	} else {
-		lists = c.QueryList(c.Model, page, limit, nil, listOrderBy, true)
+		lists = c.GEADataBaseQueryList(c.Model, page, limit, nil, listOrderBy, true)
 	}
 
 	b, _ := json.Marshal(lists)
@@ -237,13 +289,13 @@ func (c *GEAManageBaseController) Table() {
 		list[i] = x
 	}
 	if query != "" {
-		if count, err := c.QueryCount(c.Model, listFilter); err != nil {
+		if count, err := c.GEADataBaseCount(c.Model, listFilter); err != nil {
 			c.AjaxMsg("查询失败", MSG_ERR)
 		} else {
 			c.AjaxList("成功", MSG_OK, count, list)
 		}
 	} else {
-		if count, err := c.QueryCount(c.Model, nil); err != nil {
+		if count, err := c.GEADataBaseCount(c.Model, nil); err != nil {
 			c.AjaxMsg("查询失败", MSG_ERR)
 		} else {
 			c.AjaxList("成功", MSG_OK, count, list)
@@ -251,7 +303,7 @@ func (c *GEAManageBaseController) Table() {
 	}
 }
 
-func (c *GEAManageBaseController) ListFilter() map[string]interface{} {
+func (c *GEAdminBaseController) ListFilter() map[string]interface{} {
 	queryStr := c.RequestQuery("query")
 	if queryStr == "" {
 		c.AjaxMsg("请输入查询条件", MSG_ERR)
@@ -312,7 +364,7 @@ func (c *GEAManageBaseController) ListFilter() map[string]interface{} {
 }
 
 // Edit 管理后台编辑模板渲染
-func (c *GEAManageBaseController) Edit() {
+func (c *GEAdminBaseController) Edit() {
 	c.SetData("pageTitle", "编辑")
 
 	gp := c.DisplayItems(c.Model)
@@ -322,7 +374,7 @@ func (c *GEAManageBaseController) Edit() {
 	value := c.RequestQuery(field)
 
 	filters := map[string]interface{}{field: value}
-	r := c.QueryRow(c.Model, filters, true)
+	r := c.GEADataBaseQueryRow(c.Model, filters, true)
 
 	if r == nil {
 		c.AjaxMsg("data exception", MSG_ERR)
@@ -349,7 +401,7 @@ func (c *GEAManageBaseController) Edit() {
 					itemValues := v.FieldByName(item.Field)
 					itemValuesMap = append(itemValuesMap, Struct2Map(itemValues.Interface()))
 				}
-				linkItems := c.QueryList(item.Model, 0, 0, nil, nil, false)
+				linkItems := c.GEADataBaseQueryList(item.Model, 0, 0, nil, nil, false)
 				linkValue := reflect.ValueOf(linkItems).Elem()
 				linksMap := []map[string]interface{}{}
 				for i := 0; i < linkValue.Len(); i++ {
@@ -381,7 +433,7 @@ func (c *GEAManageBaseController) Edit() {
 }
 
 // Detail 管理后台编辑模板渲染
-func (c *GEAManageBaseController) Detail() {
+func (c *GEAdminBaseController) Detail() {
 	c.SetData("pageTitle", "详情")
 
 	gp := c.DisplayItems(c.Model)
@@ -393,7 +445,7 @@ func (c *GEAManageBaseController) Detail() {
 		if item.Field == field {
 			index, _ := strconv.Atoi(c.RequestParam(item.Index))
 			filters := map[string]interface{}{item.Index: index}
-			r := c.QueryRow(item.Model, filters, false)
+			r := c.GEADataBaseQueryRow(item.Model, filters, false)
 			if detailDisplayItems = c.DisplayItems(r.(geamodels.Model)); len(*detailDisplayItems) < 1 {
 				panic("DisplayItems Exception")
 			}
@@ -415,7 +467,8 @@ func (c *GEAManageBaseController) Detail() {
 						itemValuesMap := []map[string]interface{}{}
 						switch v.FieldByName(detailItem.Field).Type().Kind() {
 						case reflect.Slice:
-							orm.NewOrm().LoadRelated(r, detailItem.Field)
+							r.(geamodels.M2MModel).LoadM2M()
+							// orm.NewOrm().LoadRelated(r, detailItem.Field)
 							itemValues := v.FieldByName(detailItem.Field)
 							for _i := 0; _i < itemValues.Len(); _i++ {
 								itemValuesMap = append(itemValuesMap, Struct2Map(itemValues.Index(_i).Elem().Interface()))
@@ -425,7 +478,7 @@ func (c *GEAManageBaseController) Detail() {
 							itemValuesMap = append(itemValuesMap, Struct2Map(itemValues.Interface()))
 						}
 
-						linkItems := c.QueryList(detailItem.Model, 0, 0, nil, nil, false)
+						linkItems := c.GEADataBaseQueryList(detailItem.Model, 0, 0, nil, nil, false)
 						linkValue := reflect.ValueOf(linkItems).Elem()
 						linksMap := []map[string]interface{}{}
 						for i := 0; i < linkValue.Len(); i++ {
@@ -460,7 +513,7 @@ func (c *GEAManageBaseController) Detail() {
 }
 
 // auth 登录权限验证
-func (c *GEAManageBaseController) auth() {
+func (c *GEAdminBaseController) auth() {
 	arr := strings.Split(c.GetCookie("auth"), "|")
 	if len(arr) == 2 {
 		idStr, password := arr[0], arr[1]
@@ -515,25 +568,37 @@ func (c *GEAManageBaseController) auth() {
 			//不需要权限检查
 			isNoAuth := strings.Contains(NoAuth, c.ActionName())
 
-			cr := new([]geamodels.CasbinRule)
-			o := orm.NewOrm()
+			// o := orm.NewOrm()
 			roles := []interface{}{}
 			for _, r := range user.GetRoles() {
 				roles = append(roles, r.GetName())
 			}
 			isHasAuth := false
 			prefix := "/"
-			if c.Instance != nil {
-				prefix = c.Instance.Prefix()
+			if c.GEARolePolicy != nil {
+				prefix = c.GEARolePolicy.Prefix()
 			}
 
-			o.QueryTable(&geamodels.CasbinRule{}).
-				Filter("V0__in", roles...).
-				Filter(
-					"V1__contains",
-					fmt.Sprintf("%s/%s/%s", prefix, c.ControllerName(), c.ActionName()),
-				).
-				All(cr)
+			cr := c.GEADataBaseQueryList(
+				&geamodels.CasbinRule{},
+				1,
+				200,
+				map[string]interface{}{
+					"V0__in": roles,
+					"V1__contains": fmt.Sprintf(
+						"%s/%s/%s", prefix, c.ControllerName(), c.ActionName(),
+					),
+				},
+				nil,
+				false,
+			).(*[]*geamodels.CasbinRule)
+			// o.QueryTable(&geamodels.CasbinRule{}).
+			// 	Filter("V0__in", roles...).
+			// 	Filter(
+			// 		"V1__contains",
+			// 		fmt.Sprintf("%s/%s/%s", prefix, c.ControllerName(), c.ActionName()),
+			// 	).
+			// 	All(cr)
 			if len(*cr) > 0 {
 				isHasAuth = true
 			}

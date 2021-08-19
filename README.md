@@ -155,15 +155,15 @@ func init() {
 }
 
 // AutoRouter 注册路由并注册 CasbinRule 和 SideTree
-func AutoRouter(c geacontrollers.ControllerRolePolicy) *beego.HttpServer {
-	geacontrollers.RegisterControllerRolePolicy(c)
+func AutoRouter(c geacontrollers.GEARolePolicy) *beego.HttpServer {
+	geacontrollers.RegisterGEARolePolicy(c)
 	geacontrollers.RegisterSideTree(c)
 	return beego.AutoRouter(c.(beego.ControllerInterface))
 }
 
 // NSAutoRouter 注册路由并注册 CasbinRule 和 SideTree
-func NSAutoRouter(c geacontrollers.ControllerRolePolicy) beego.LinkNamespace {
-	geacontrollers.RegisterControllerRolePolicy(c)
+func NSAutoRouter(c geacontrollers.GEARolePolicy) beego.LinkNamespace {
+	geacontrollers.RegisterGEARolePolicy(c)
 	geacontrollers.RegisterSideTree(c)
 	return beego.NSAutoRouter(c.(beego.ControllerInterface))
 }

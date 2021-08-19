@@ -21,5 +21,5 @@ func (c *HomeController) Index() {
 // Start 控制面板
 func (c *HomeController) Start() {
 	c.Controller.Data["pageTitle"] = "控制面板"
-	c.GEABaseController.Display()
+	c.GEAdminBaseController.Display()
 }

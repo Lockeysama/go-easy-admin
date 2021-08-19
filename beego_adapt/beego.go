@@ -42,7 +42,7 @@ func InjectRouters() {
 	))
 }
 
-func AutoRegistryRouter(controller geacontrollers.ControllerRolePolicy) beego.LinkNamespace {
+func AutoRegistryRouter(controller geacontrollers.GEARolePolicy) beego.LinkNamespace {
 	return beego.NSAutoRouter(
 		geadmin.AutoRegistryRouter(controller).(beego.ControllerInterface),
 	)

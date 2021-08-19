@@ -140,8 +140,22 @@ func fieldParse(field reflect.StructField) (tagsMaps []map[string]string) {
 	return
 }
 
+// Display 加载模板
+func (c *GEAdminBaseController) Display(tpl ...string) {
+	var name string
+	if len(tpl) > 0 {
+		name = strings.Join([]string{tpl[0], "html"}, ".")
+	} else {
+		if c.GEAController != nil {
+			name = c.ControllerName() + "/" + c.ActionName() + ".html"
+		}
+	}
+	c.SetLayout("public/layout.html")
+	c.SetTplName(name)
+}
+
 // DisplayItems 返回管理后台列表表单显示选项
-func (c *GEAManageBaseController) DisplayItems(model geamodels.Model) *[]DisplayItem {
+func (c *GEAdminBaseController) DisplayItems(model geamodels.Model) *[]DisplayItem {
 	v := reflect.ValueOf(model).Elem()
 	if v.Kind() == reflect.Invalid {
 		v = reflect.New(reflect.TypeOf(model).Elem()).Elem()

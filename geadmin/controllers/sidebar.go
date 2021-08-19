@@ -1,9 +1,13 @@
 package geacontrollers
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"strings"
+
+	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
+	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
 )
 
 // SideNode 侧栏节点
@@ -22,7 +26,7 @@ func init() {
 }
 
 // RegisterSideTree 控制器注册侧栏节点
-func RegisterSideTree(c ControllerRolePolicy) {
+func RegisterSideTree(c GEARolePolicy) {
 	reflectVal := reflect.ValueOf(c)
 	ct := reflect.Indirect(reflectVal).Type()
 	prefix := strings.ToLower(c.Prefix()[1:])
@@ -70,4 +74,23 @@ func SideTree(path map[string][]string) *[]SideNode {
 		}
 	}
 	return trees
+}
+
+// SideTreeAuth Admin 授权验证
+func (c *GEAdminBaseController) SideTreeAuth() {
+	sideTree, found := cache.DefaultMemCache().Get(fmt.Sprintf("SideTree%d", c.User.GetID()))
+	if found && sideTree != nil { //从缓存取菜单
+		sideTree := sideTree.(*[]SideNode)
+		c.SetData("SideTree", sideTree)
+	} else {
+		// 左侧导航栏
+		casbinRoles := geamodels.AdminPathPermissions()
+		sideTree := SideTree(casbinRoles)
+		c.SetData("SideTree", sideTree)
+		cache.DefaultMemCache().Set(
+			fmt.Sprintf("SideTree%d", c.User.GetID()),
+			sideTree,
+			cache.DefaultMemCacheExpiration,
+		)
+	}
 }
