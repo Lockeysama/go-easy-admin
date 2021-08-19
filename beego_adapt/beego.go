@@ -26,17 +26,17 @@ func InitGEAModelAdapt() {
 }
 
 func InjectRouters() {
-	beego.Router("/", &admincontrollers.APIDocController{}, "*:Index")
+	beego.Router("/", &admincontrollers.IndexController{}, "*:Index")
 
 	beego.Router("/login", &admincontrollers.LoginController{}, "*:Login")
 	beego.Router("/login_out", &admincontrollers.LoginController{}, "*:Logout")
 	beego.Router("/no_auth", &admincontrollers.LoginController{}, "*:NoAuth")
 
-	beego.Router("/home", &admincontrollers.HomeController{}, "*:Index")
-	beego.Router("/home/start", &admincontrollers.HomeController{}, "*:Start")
+	beego.Router("/admin", &admincontrollers.AdminController{}, "*:Index")
+	beego.Router("/admin/start", &admincontrollers.AdminController{}, "*:Start")
 
-	beego.AddNamespace(beego.NewNamespace("/admin",
-		AutoRegistryRouter(&admincontrollers.AdminController{}),
+	beego.AddNamespace(beego.NewNamespace("/administrator",
+		AutoRegistryRouter(&admincontrollers.AdministratorController{}),
 		AutoRegistryRouter(&admincontrollers.RoleController{}),
 		AutoRegistryRouter(&admincontrollers.CasbinController{}),
 	))

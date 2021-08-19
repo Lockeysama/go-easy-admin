@@ -25,7 +25,7 @@ type LoginController struct {
 // TODO:XSRF过滤
 func (c *LoginController) Login() {
 	if c.User != nil && c.User.GetID() > 0 {
-		c.Redirect("/home", 302)
+		c.Redirect("/admin", 302)
 		return
 	}
 	beego.ReadFromRequest(&c.Controller)
@@ -74,7 +74,7 @@ func (c *LoginController) Login() {
 				authkey := fmt.Sprintf("%x", hash.Sum(nil))
 				c.SetCookie("auth", fmt.Sprintf("%d|%s", user.ID, authkey), 7*86400)
 
-				c.Redirect("/home", 302)
+				c.Redirect("/admin", 302)
 			}
 			fmt.Println(errorMsg)
 			flash.Error(errorMsg)

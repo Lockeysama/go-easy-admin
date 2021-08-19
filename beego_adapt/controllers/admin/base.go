@@ -11,7 +11,7 @@ type AdminBaseController struct {
 
 // Prefix 前缀
 func (c *AdminBaseController) Prefix() string {
-	return "/admin"
+	return "/administrator"
 }
 
 // PrefixAlias 前缀别名
