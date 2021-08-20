@@ -5,15 +5,15 @@
         {{range $i, $item := .display}}
         <div class="layui-form-item">
             <label class="layui-form-label">{{$item.Title}}</label>
-            {{if eq $item.DBType "Char" "Number"}}
+            {{if eq $item.DBType $.DisplayType.Char $.DisplayType.Number}}
             <div class="layui-input-block">
                 <input disabled type="text" name="{{$item.Field}}" id="{{$item.Field}}"  autocomplete="off" placeholder="" class="layui-input" value="{{$item.Value}}" style="width: 90%; background-color: #f8f8f8;">
             {{end}}
-            {{if eq $item.DBType "Bool"}}
+            {{if eq $item.DBType $.DisplayType.Bool}}
             <div class="layui-input-block">
                 <input disabled type="checkbox" name="{{$item.Field}}" id="{{$item.Field}}" lay-skin="switch" value="{{$item.Value}}", {{if $item.Value}}checked{{end}}>
             {{end}}
-            {{if eq $item.DBType "ForeignKey" "O2O"}}
+            {{if eq $item.DBType $.DisplayType.ForeignKey $.DisplayType.O2O}}
             <div class="layui-input-inline">
                 <select disabled name="{{$item.Field}}" required  lay-search="" style="width: 90%; background-color: #f8f8f8;" value="{{$item.Value}}">
                     <option value="">{{$item.Title}}</option>
@@ -26,22 +26,22 @@
                     {{end}}
                 </select>
             {{end}}
-            {{if eq $item.DBType "M2M"}}
+            {{if eq $item.DBType $.DisplayType.M2M}}
             <div class="layui-input-block" id="{{$item.Field}}" style="width: 90%;" value="{{$item.Value}}">
             {{end}}
-            {{if eq $item.DBType "Datetime"}}
+            {{if eq $item.DBType $.DisplayType.Datetime}}
             <div class="layui-input-block">
                 <input disabled type="text" name="{{$item.Field}}" id="{{$item.Field}}"  autocomplete="off" placeholder="" class="layui-input" value="{{$item.Value}}" style="width: 90%; background-color: #f8f8f8;">
             {{end}}
-            {{if eq $item.DBType "Time"}}
+            {{if eq $item.DBType $.DisplayType.Time}}
             <div class="layui-input-block">
                 <input disabled type="text" name="{{$item.Field}}" id="{{$item.Field}}"  autocomplete="off" placeholder="" class="layui-input" value="{{$item.Value}}" style="width: 90%; background-color: #f8f8f8;">
             {{end}}
-            {{if eq $item.DBType "Text"}}
+            {{if eq $item.DBType $.DisplayType.Text}}
             <div class="layui-input-block">
                 <textarea disabled name="{{$item.Field}}" class="layui-textarea" style="width: 90%; background-color: #f8f8f8;" value="{{$item.Value}}"></textarea>
             {{end}}
-            {{if eq $item.DBType "File"}}
+            {{if eq $item.DBType $.DisplayType.File}}
             <div class="layui-input-inline">
                 <br>
                 <div>
@@ -71,14 +71,14 @@
     layui.use('laydate', function(){
       var laydate = layui.laydate;
       {{range $i, $item := .display}}
-      {{if eq $item.DBType "Datetime"}}
+      {{if eq $item.DBType $.DisplayType.Datetime}}
       laydate.render({
         elem: '#{{$item.Field}}',
         type: 'datetime',
         value: new Date({{$item.Value}}),
       });
       {{end}}
-      {{if eq $item.DBType "Time"}}
+      {{if eq $item.DBType $.DisplayType.Time}}
       laydate.render({
         elem: '#{{$item.Field}}',
         type: 'time',
@@ -93,7 +93,7 @@
     var transfer = layui.transfer;
    
     {{range $i, $item := .display}}
-    {{if eq $item.DBType "M2M"}}
+    {{if eq $item.DBType $.DisplayType.M2M}}
     transfer.render({
       elem: '#{{$item.Field}}',  //绑定元素
       title: ["未选中", "已选中"]

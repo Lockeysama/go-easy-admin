@@ -5,10 +5,13 @@ import (
 	"reflect"
 
 	"github.com/beego/beego/v2/client/orm"
+	geacontrollers "github.com/lockeysama/go-easy-admin/geadmin/controllers"
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 )
 
-func (c *AdaptController) GEADataBaseCount(model geamodels.Model, filters map[string]interface{}) (int64, error) {
+func (c *AdaptController) GEADataBaseCount(
+	model geamodels.Model, filters map[string]interface{},
+) (int64, error) {
 	o := orm.NewOrm()
 	qs := o.QueryTable(model)
 	for field := range filters {
@@ -55,11 +58,11 @@ func (c *AdaptController) GEADataBaseQueryList(
 		vLists := reflect.ValueOf(lists).Elem()
 		for _, item := range *c.DisplayItems(model) {
 			switch item.DBType {
-			case "M2M":
+			case geacontrollers.DisplayType.M2M:
 				for i := 0; i < vLists.Len(); i++ {
 					vLists.Index(i).Interface().(geamodels.M2MModel).LoadM2M()
 				}
-			case "O2O", "ForeignKey":
+			case geacontrollers.DisplayType.O2O, geacontrollers.DisplayType.ForeignKey:
 				if _, ok := fksList[item.Model]; !ok {
 					fksList[item.Model] = reflect.ValueOf(
 						c.GEADataBaseQueryList(item.Model, 0, 0, nil, nil, false),
@@ -103,9 +106,9 @@ func (c *AdaptController) GEADataBaseQueryRow(
 		fksList := make(map[interface{}]reflect.Value)
 		for _, item := range *c.DisplayItems(model) {
 			switch item.DBType {
-			case "M2M":
+			case geacontrollers.DisplayType.M2M:
 				row.(geamodels.M2MModel).LoadM2M()
-			case "O2O", "ForeignKey":
+			case geacontrollers.DisplayType.O2O, geacontrollers.DisplayType.ForeignKey:
 				if _, ok := fksList[item.Model]; !ok {
 					fksList[item.Model] = reflect.ValueOf(
 						c.GEADataBaseQueryList(item.Model, 0, 0, nil, nil, false),
@@ -117,7 +120,11 @@ func (c *AdaptController) GEADataBaseQueryRow(
 				}
 				vRowIndex := vRow.FieldByName(item.Field).Elem().FieldByName(item.Index).Interface()
 				for j := 0; j < fksList[item.Model].Len(); j++ {
-					if vRowIndex == fksList[item.Model].Index(j).Elem().FieldByName(item.Index).Interface() {
+					if vRowIndex == fksList[item.Model].
+						Index(j).
+						Elem().
+						FieldByName(item.Index).
+						Interface() {
 						vRow.FieldByName(item.Field).Set(fksList[item.Model].Index(j))
 						break
 					}
@@ -133,7 +140,11 @@ func (c *AdaptController) GEADataBaseInsert(model geamodels.Model) (int64, error
 	return ID, err
 }
 
-func (c *AdaptController) GEADataBaseUpdate(model geamodels.Model, filters map[string]interface{}, params map[string]interface{}) (int64, error) {
+func (c *AdaptController) GEADataBaseUpdate(
+	model geamodels.Model,
+	filters map[string]interface{},
+	params map[string]interface{},
+) (int64, error) {
 	qs := orm.NewOrm().QueryTable(model)
 	for k, v := range filters {
 		qs = qs.Filter(k, v)
@@ -142,7 +153,9 @@ func (c *AdaptController) GEADataBaseUpdate(model geamodels.Model, filters map[s
 	return ID, err
 }
 
-func (c *AdaptController) GEADataBaseDelete(model geamodels.Model, filters map[string]interface{}) (int64, error) {
+func (c *AdaptController) GEADataBaseDelete(
+	model geamodels.Model, filters map[string]interface{},
+) (int64, error) {
 	qs := orm.NewOrm().QueryTable(model)
 	for k, v := range filters {
 		qs = qs.Filter(k, v)

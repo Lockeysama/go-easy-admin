@@ -1,9 +1,12 @@
 package geacontrollers
 
 import (
-	"fmt"
+	"encoding/json"
+	"reflect"
 	"strconv"
 	"time"
+
+	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 )
 
 // 消息码
@@ -44,14 +47,68 @@ func (c *GEAdminBaseController) AjaxList(msg interface{}, msgNo int, count int64
 	c.StopRun()
 }
 
+// AjaxAdd 新增数据
+func (c *GEAdminBaseController) AjaxAdd() {
+	items := c.DisplayItems(c.Model)
+	params := c.parser(items)
+	if params == nil {
+		c.AjaxMsg("失败", MSG_ERR)
+		return
+	}
+	c.makeListPK(items)
+
+	r := reflect.New(reflect.TypeOf(c.Model).Elem()).Interface()
+	var (
+		b   []uint8
+		err error
+	)
+	if b, err = json.Marshal(params); err != nil {
+		c.AjaxMsg(err.Error(), MSG_ERR)
+		return
+	}
+	if err = json.Unmarshal(b, r); err != nil {
+		c.AjaxMsg(err.Error(), MSG_ERR)
+		return
+	}
+	if _, err = c.GEADataBaseInsert(r); err != nil {
+		c.AjaxMsg(err.Error(), MSG_ERR)
+		return
+	}
+
+	c.AjaxMsg("成功", MSG_OK)
+}
+
+// AjaxUpdate 修改数据
+func (c *GEAdminBaseController) AjaxUpdate() {
+	items := c.DisplayItems(c.Model)
+	params := c.parser(items)
+	if params == nil {
+		c.AjaxMsg("失败", MSG_ERR)
+		return
+	}
+	c.makeListPK(items)
+
+	if pk, ok := params[c.GetData()["pkField"].(string)]; ok && pk != nil {
+		r := reflect.New(reflect.TypeOf(c.Model).Elem()).Interface()
+		if _, err := c.GEADataBaseUpdate(
+			r.(geamodels.Model),
+			map[string]interface{}{c.GetData()["pkField"].(string): pk},
+			params,
+		); err != nil {
+			c.AjaxMsg(err.Error(), MSG_ERR)
+			return
+		}
+	}
+
+	c.AjaxMsg("成功", MSG_OK)
+}
+
 // AjaxSave 修改数据
-func (c *GEAdminBaseController) AjaxSave() {
+func (c *GEAdminBaseController) parser(displayItems *[]DisplayItem) map[string]interface{} {
 	params := map[string]interface{}{}
-	displayItems := c.DisplayItems(c.Model)
-	c.makeListPK(displayItems)
 	for _, item := range *displayItems {
 		switch item.DBType {
-		case "Char", "File":
+		case DisplayType.Char, DisplayType.File:
 			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
 				if value[0] == "<nil>" {
 					params[item.Field] = nil
@@ -59,7 +116,7 @@ func (c *GEAdminBaseController) AjaxSave() {
 					params[item.Field] = value[0]
 				}
 			}
-		case "Number", "ForeignKey", "O2O":
+		case DisplayType.Number, DisplayType.ForeignKey, DisplayType.O2O:
 			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
 				if i, err := strconv.Atoi(value[0]); err == nil {
 					params[item.Field] = i
@@ -69,7 +126,7 @@ func (c *GEAdminBaseController) AjaxSave() {
 					}
 				}
 			}
-		case "M2M":
+		case DisplayType.M2M:
 			if value, ok := c.RequestForm()[item.Field+"[]"]; ok && len(value) > 0 {
 				m2m := []interface{}{}
 				m2mDisplayItems := c.DisplayItems(item.Model)
@@ -78,7 +135,7 @@ func (c *GEAdminBaseController) AjaxSave() {
 					switch m2mItem.Field {
 					case item.Index:
 						switch m2mItem.DBType {
-						case "Number":
+						case DisplayType.Number:
 							for _, v := range value {
 								if i, err := strconv.Atoi(v); err == nil {
 									m2m = append(m2m, i)
@@ -94,27 +151,27 @@ func (c *GEAdminBaseController) AjaxSave() {
 				}
 				params[item.Field] = m2m
 			}
-		case "Bool":
+		case DisplayType.Bool:
 			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
 				params[item.Field] = value[0] == "on"
 			}
-		case "Datetime":
+		case DisplayType.Datetime:
 			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
-				if item.DataType == "Time" {
+				if item.DataType == DisplayType.Time {
 					params[item.Field], _ = time.Parse("2006-01-02 15:04:05", value[0])
 				} else {
 					timestamp, _ := time.ParseInLocation("2006-01-02 15:04:05", value[0], time.Local)
 					params[item.Field] = timestamp.Unix()
 				}
 			}
-		case "Time":
+		case DisplayType.Time:
 			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
-				if item.DataType == "Time" {
+				if item.DataType == DisplayType.Time {
 					params[item.Field], _ = time.Parse("2006-01-02 15:04:05", value[0])
 				} else {
 					if ts, err := strconv.Atoi(value[0]); err != nil {
 						c.AjaxMsg(err.Error(), 400)
-						return
+						return nil
 					} else {
 						params[item.Field] = int64(ts)
 					}
@@ -123,27 +180,11 @@ func (c *GEAdminBaseController) AjaxSave() {
 		}
 
 	}
-	items := c.DisplayItems(c.Model)
-	c.makeListPK(items)
-	if pk, ok := params[c.GetData()["pkField"].(string)]; ok && pk != nil {
-		err := c.updateData(pk, displayItems, &params)
-		if err != nil {
-			c.AjaxMsg(err.Error(), MSG_ERR)
-			return
-		}
-	} else {
-		err := c.addData(displayItems, &params)
-		if err != nil {
-			c.AjaxMsg(err.Error(), MSG_ERR)
-			return
-		}
-	}
-	fmt.Println(params)
-	c.AjaxMsg("成功", MSG_OK)
+	return params
 }
 
 // AjaxDel 删除数据
-func (c *GEAdminBaseController) AjaxDel() {
+func (c *GEAdminBaseController) AjaxDelete() {
 	items := c.DisplayItems(c.Model)
 	c.makeListPK(items)
 	field := c.GetData()["pkField"].(string)
@@ -153,7 +194,9 @@ func (c *GEAdminBaseController) AjaxDel() {
 		switch params[key].(type) {
 		case []string:
 		case string:
-			if _, err := c.GEADataBaseDelete(c.Model, map[string]interface{}{key: params[key]}); err != nil {
+			if _, err := c.GEADataBaseDelete(
+				c.Model, map[string]interface{}{key: params[key]},
+			); err != nil {
 				c.AjaxMsg(err.Error(), MSG_ERR)
 				return
 			}
@@ -161,16 +204,4 @@ func (c *GEAdminBaseController) AjaxDel() {
 	}
 
 	c.AjaxMsg("成功", MSG_OK)
-}
-
-// RequestError API 请求错误
-func (c *GEAdminBaseController) RequestError(code int, msg ...string) {
-	errMsg := ""
-	for _, m := range msg {
-		errMsg += (m + ". ")
-	}
-	if errMsg == "" {
-		errMsg = "请求错误"
-	}
-	c.CustomAbort(code, errMsg)
 }

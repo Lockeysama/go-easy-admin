@@ -55,7 +55,8 @@ func (c *GEAdminBaseController) AdminIcon() string {
 func (c *GEAdminBaseController) AdminPathMethods() []string {
 	return []string{
 		"list", "add", "update", "delete", "table", "edit",
-		"ajaxsave", "ajaxdel", "ajaxupload", "ajaxgetfile",
+		"ajaxadd", "ajaxupdate", "ajaxdelete",
+		"ajaxupload", "ajaxdownload",
 	}
 }
 

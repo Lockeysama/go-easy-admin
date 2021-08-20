@@ -67,7 +67,7 @@
                     {{if eq $i 0}}
                     {field:{{$item.Field}},title:{{$item.Title}},sort:true,fixed: 'left'},
                     {{else}}
-                    {{if eq $item.DBType "M2M"}}
+                    {{if eq $item.DBType $.DisplayType.M2M}}
                     {field:{{$item.Field}},title:{{$item.Title}},sort:false},
                     {{else}}
                     {field:{{$item.Field}},title:{{$item.Title}},sort:true},
@@ -207,7 +207,6 @@
         });
 
         $("#add").on("click",function() {
-            // window.location.href="{{.prefix}}/{{.path}}/add";
             var that = this; 
                 //多窗口模式，层叠置顶
             layer.open({
@@ -235,7 +234,7 @@
             
             layer.confirm(msg, function(){
                 var del_data = {"id":eval("data."+{{(index .display 0).Field}})}
-                $.post('{{urlfor "ApiController.AjaxDel"}}', del_data, function (out) {
+                $.post('{{urlfor "ApiController.AjaxDelete"}}', del_data, function (out) {
                     if (out.status == 0) {
                         layer.msg("操作成功",{icon: 1},function () {
                             $("#reload").click();
@@ -278,7 +277,7 @@
                 
                 layer.confirm(msg, function(){
                     var del_data = {"{{.pkField}}": eval("data."+{{.pkField}})}
-                    var url = "{{.prefix}}/{{.path}}/ajaxdel?{{.pkField}}=" + eval("data."+{{.pkField}})
+                    var url = "{{.prefix}}/{{.path}}/ajaxdelete?{{.pkField}}=" + eval("data."+{{.pkField}})
                     $.post(url, del_data, function (out) {
                         if (out.status == 0) {
                             layer.msg("操作成功",{icon: 1},function () {
@@ -326,17 +325,17 @@
             "children": [
                 {"field": "eq", "name": "等于"},
                 {"field": "ne", "name": "不等于"},
-                {{if eq $item.DBType "Number" "Datetime" "Date" "Time" "ForeignKey" "O2O"}}
+                {{if eq $item.DBType $.DisplayType.Number $.DisplayType.Datetime "Date" $.DisplayType.Time $.DisplayType.ForeignKey $.DisplayType.O2O}}
                 {"field": "gt", "name": "大于"},
                 {"field": "lt", "name": "小于"},
                 {"field": "gte", "name": "大于等于"},
                 {"field": "lte", "name": "小于等于"},
                 {{end}}
-                {{if eq $item.DBType "Char"}}
+                {{if eq $item.DBType $.DisplayType.Char}}
                 {"field": "is_contains", "name": "包含"},
                 {"field": "not_contains", "name": "不包含"},
                 {{end}}
-                {{if eq $item.DBType "M2M"}}
+                {{if eq $item.DBType $.DisplayType.M2M}}
                 {"field": "is_contains", "name": "包含"},
                 {"field": "not_contains", "name": "不包含"},
                 {{end}}
@@ -392,22 +391,22 @@
 
         form.on('select', function (data) {
             {{range $i, $item := .display}}
-            {{if eq $item.DBType "Char" "Number" "Bool" "ForeignKey" "M2M" "O2O"}}
+            {{if eq $item.DBType $.DisplayType.Char $.DisplayType.Number $.DisplayType.Bool $.DisplayType.ForeignKey $.DisplayType.M2M $.DisplayType.O2O}}
             if (data.value == {{$item.Field}}) {
                 $("#query-filter-input").attr("placeholder", "若不输入，则查询条件为 Null");
             }
             {{end}}
-            {{if eq $item.DBType "Datetime"}}
+            {{if eq $item.DBType $.DisplayType.Datetime}}
             if (data.value == {{$item.Field}}) {
                 $("#query-filter-input").attr("placeholder", "yyyy-MM-dd hh:mm:ss");
             }
             {{end}}
-            {{if eq $item.DBType "Date"}}
+            {{if eq $item.DBType $.DisplayType.Date}}
             if (data.value == {{$item.Field}}) {
                 $("#query-filter-input").attr("placeholder", "yyyy-MM-dd");
             }
             {{end}}
-            {{if eq $item.DBType "Time"}}
+            {{if eq $item.DBType $.DisplayType.Time}}
             if (data.value == {{$item.Field}}) {
                 $("#query-filter-input").attr("placeholder", "hh-mm-ss");
             }

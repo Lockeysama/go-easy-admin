@@ -3,60 +3,21 @@ package geacontrollers
 import (
 	"bytes"
 	"crypto/md5"
+	"encoding/gob"
+	"encoding/json"
 	"fmt"
-	"mime/multipart"
-	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 
 	geaconfig "github.com/lockeysama/go-easy-admin/geadmin/config"
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
-
-	"encoding/gob"
-	"encoding/json"
-	"reflect"
 )
 
 var AdminModel geamodels.GEAdmin
 
-var NoAuth = `login/logout/getnodes/start/show/ajaxapisave/index/group/public/env/code/apidetail`
-
-type GEAController interface {
-	Prepare()
-
-	GetCookie(string) string
-	SetCookie(string, string, ...interface{})
-
-	RequestURL() *url.URL
-	RequestMethod() string
-
-	RequestQuery(string) string
-	RequestParam(string) string
-	RequestBody() []byte
-
-	RequestForm() url.Values
-	RequestMultipartForm() *multipart.Form
-
-	Redirect(url string, code int)
-
-	ServeJSON(encoding ...bool)
-	CustomAbort(status int, body string)
-
-	StopRun()
-
-	SetData(dataType interface{}, data interface{})
-	GetData() map[interface{}]interface{}
-
-	SetLayout(layoutName string)
-	SetTplName(layoutName string)
-
-	GetController() string
-	GetAction() string
-
-	ControllerName() string
-	ActionName() string
-}
+var NoAuth = `login/logout/start/index`
 
 // ManageBaseController 控制器管理基类
 type GEAdminBaseController struct {
@@ -85,6 +46,8 @@ func (c *GEAdminBaseController) DBModel() geamodels.Model {
 
 // Prepare 前期准备
 func (c *GEAdminBaseController) Prepare() {
+	c.SetData("DisplayType", DisplayType)
+
 	c.PageSize = 20
 	c.SetData("version", geaconfig.GEAConfig().Version)
 	c.SetData("sitename", geaconfig.GEAConfig().SiteName)
@@ -101,32 +64,6 @@ func (c *GEAdminBaseController) Prepare() {
 
 	c.SetData("prefix", prefix)
 
-	// fmt.Println(c.ControllerName())
-
-	// if (strings.Compare(c.ControllerName(), "apidoc")) != 0 {
-	// 	fmt.Println("a ...interface{}")
-	// if utils.Contain(c.Ctx().APIVersion(), &APIVersion) {
-	// 	if APIAuthFunc != nil {
-	// 		noAuth := false
-	// 		for _, action := range c.NoAuthAction {
-	// 			if strings.ToLower(action) == c.ActionName() {
-	// 				noAuth = true
-	// 			}
-	// 		}
-	// 		if !noAuth {
-	// 			if err := APIAuthFunc(c); err != nil {
-	// 				actions := []interface{}{"getall", "get", "put", "post", "delete"}
-	// 				if utils.Contain(c.ActionName, &actions) {
-	// 					c.RequestError(401, err.Error())
-	// 				} else {
-	// 					c.AjaxMsg(err.Error(), MSG_ERR)
-	// 				}
-	// 			}
-	// 		}
-	// 	} else {
-	// 		panic("APIAuthFunc undefined")
-	// 	}
-	// } else {
 	c.auth()
 	if c.User != nil {
 		c.SetData(
@@ -134,8 +71,18 @@ func (c *GEAdminBaseController) Prepare() {
 			fmt.Sprintf("%s(%s)", c.User.GetRealName(), c.User.GetUserName()),
 		)
 	}
-	// }
-	// }
+}
+
+// RequestError API 请求错误
+func (c *GEAdminBaseController) RequestError(code int, msg ...string) {
+	errMsg := ""
+	for _, m := range msg {
+		errMsg += (m + ". ")
+	}
+	if errMsg == "" {
+		errMsg = "请求错误"
+	}
+	c.CustomAbort(code, errMsg)
 }
 
 // Redirect 重定向
@@ -175,7 +122,7 @@ func Struct2Map(obj interface{}) map[string]interface{} {
 		field := v.Field(i)
 		switch reflect.TypeOf(field.Interface()).Kind() {
 		case reflect.Struct:
-			if t.Field(i).Type.Name() == "Time" {
+			if t.Field(i).Type.Name() == DisplayType.Time {
 				data[t.Field(i).Name] = v.Field(i).Interface()
 			} else {
 				data[t.Field(i).Name] = Struct2Map(v.Field(i))
@@ -210,7 +157,7 @@ func (c *GEAdminBaseController) Add() {
 	c.makeListPK(items)
 	linkItemsMap := map[string][]map[string]interface{}{}
 	for _, item := range *items {
-		if item.DBType == "M2M" || item.DBType == "O2O" || item.DBType == "ForeignKey" {
+		if item.DBType == DisplayType.M2M || item.DBType == DisplayType.O2O || item.DBType == DisplayType.ForeignKey {
 			linkItems := c.GEADataBaseQueryList(item.Model, 0, 0, nil, nil, false)
 			linkValue := reflect.ValueOf(linkItems).Elem()
 			linksMap := []map[string]interface{}{}
@@ -383,13 +330,13 @@ func (c *GEAdminBaseController) Edit() {
 		v := reflect.ValueOf(r).Elem()
 		linkItemsMap := map[string][]map[string]interface{}{}
 		for i, item := range *gp {
-			if item.DBType == "Datetime" {
-				if v.FieldByName(item.Field).Type().Name() == "Time" {
+			if item.DBType == DisplayType.Datetime {
+				if v.FieldByName(item.Field).Type().Name() == DisplayType.Time {
 					(*gp)[i].Value = v.FieldByName(item.Field).Interface()
 				} else {
 					(*gp)[i].Value = v.FieldByName(item.Field).Int() * 1000
 				}
-			} else if item.DBType == "M2M" || item.DBType == "O2O" || item.DBType == "ForeignKey" {
+			} else if item.DBType == DisplayType.M2M || item.DBType == DisplayType.O2O || item.DBType == DisplayType.ForeignKey {
 				itemValuesMap := []map[string]interface{}{}
 				switch v.FieldByName(item.Field).Type().Kind() {
 				case reflect.Slice:
@@ -457,13 +404,13 @@ func (c *GEAdminBaseController) Detail() {
 				v := reflect.ValueOf(r).Elem()
 				linkItemsMap := map[string][]map[string]interface{}{}
 				for i, detailItem := range *detailDisplayItems {
-					if detailItem.DBType == "Datetime" {
-						if detailItem.DataType == "Time" {
+					if detailItem.DBType == DisplayType.Datetime {
+						if detailItem.DataType == DisplayType.Time {
 							(*detailDisplayItems)[i].Value = v.FieldByName(detailItem.Field).Interface()
 						} else {
 							(*detailDisplayItems)[i].Value = v.FieldByName(detailItem.Field).Int() * 1000
 						}
-					} else if detailItem.DBType == "M2M" || detailItem.DBType == "O2O" || detailItem.DBType == "ForeignKey" {
+					} else if detailItem.DBType == DisplayType.M2M || detailItem.DBType == DisplayType.O2O || detailItem.DBType == DisplayType.ForeignKey {
 						itemValuesMap := []map[string]interface{}{}
 						switch v.FieldByName(detailItem.Field).Type().Kind() {
 						case reflect.Slice:
@@ -568,7 +515,6 @@ func (c *GEAdminBaseController) auth() {
 			//不需要权限检查
 			isNoAuth := strings.Contains(NoAuth, c.ActionName())
 
-			// o := orm.NewOrm()
 			roles := []interface{}{}
 			for _, r := range user.GetRoles() {
 				roles = append(roles, r.GetName())
@@ -592,13 +538,7 @@ func (c *GEAdminBaseController) auth() {
 				nil,
 				false,
 			).(*[]*geamodels.CasbinRule)
-			// o.QueryTable(&geamodels.CasbinRule{}).
-			// 	Filter("V0__in", roles...).
-			// 	Filter(
-			// 		"V1__contains",
-			// 		fmt.Sprintf("%s/%s/%s", prefix, c.ControllerName(), c.ActionName()),
-			// 	).
-			// 	All(cr)
+
 			if len(*cr) > 0 {
 				isHasAuth = true
 			}

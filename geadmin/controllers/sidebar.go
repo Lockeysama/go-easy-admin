@@ -60,7 +60,9 @@ func SideTree(path map[string][]string) *[]SideNode {
 	// TODO 速度优化
 	trees := new([]SideNode)
 	keys := reflect.ValueOf(path).MapKeys()
-	keysOrder := func(i, j int) bool { return keys[i].Interface().(string) < keys[j].Interface().(string) }
+	keysOrder := func(i, j int) bool {
+		return keys[i].Interface().(string) < keys[j].Interface().(string)
+	}
 	sort.Slice(keys, keysOrder)
 	for _, prefix := range keys {
 		paths := path[prefix.Interface().(string)]

@@ -5,15 +5,15 @@
         {{range $i, $item := .display}}
         <div class="layui-form-item">
             <label class="layui-form-label">{{$item.Title}}</label>
-            {{if eq $item.DBType "Char" "Number"}}
+            {{if eq $item.DBType $.DisplayType.Char $.DisplayType.Number}}
             <div class="layui-input-block">
                 <input {{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}}disabled{{end}} type="text" name="{{$item.Field}}" id="{{$item.Field}}"  autocomplete="off" placeholder="" class="layui-input" value="{{$item.Value}}" style="width: 90%;{{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}};background-color: #f8f8f8;{{end}}">
             {{end}}
-            {{if eq $item.DBType "Bool"}}
+            {{if eq $item.DBType $.DisplayType.Bool}}
             <div class="layui-input-block">
                 <input {{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}}disabled{{end}} type="checkbox" name="{{$item.Field}}" id="{{$item.Field}}" lay-skin="switch" {{if $item.Value}}checked=""{{end}} style="{{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}};background-color: #f8f8f8;{{end}}">
             {{end}}
-            {{if eq $item.DBType "ForeignKey" "O2O"}}
+            {{if eq $item.DBType $.DisplayType.ForeignKey $.DisplayType.O2O}}
             <div class="layui-input-inline">
                 <select {{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}}disabled{{end}} name="{{$item.Field}}" required  lay-search="" case-sensitive="false" style="width: 90%{{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}};background-color: #f8f8f8;{{end}}" value="{{$item.Value}}">
                     <option value="">{{$item.Title}}</option>
@@ -26,22 +26,22 @@
                     {{end}}
                 </select>
             {{end}}
-            {{if eq $item.DBType "M2M"}}
+            {{if eq $item.DBType $.DisplayType.M2M}}
             <div {{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}}disabled{{end}} class="layui-input-block" id="{{$item.Field}}" style="width: 90%;{{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}};background-color: #f8f8f8;{{end}}" value="{{$item.Value}}">
             {{end}}
-            {{if eq $item.DBType "Datetime"}}
+            {{if eq $item.DBType $.DisplayType.Datetime}}
             <div class="layui-input-block">
                 <input {{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}}disabled{{end}} type="text" name="{{$item.Field}}" id="{{$item.Field}}"  autocomplete="off" placeholder="" class="layui-input" value="{{$item.Value}}" style="width: 90%;{{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}};background-color: #f8f8f8;{{end}}">
             {{end}}
-            {{if eq $item.DBType "Time"}}
+            {{if eq $item.DBType $.DisplayType.Time}}
             <div class="layui-input-block">
                 <input {{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}}disabled{{end}} type="text" name="{{$item.Field}}" id="{{$item.Field}}"  autocomplete="off" placeholder="" class="layui-input" value="{{$item.Value}}" style="width: 90%;{{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}};background-color: #f8f8f8;{{end}}">
             {{end}}
-            {{if eq $item.DBType "Text"}}
+            {{if eq $item.DBType $.DisplayType.Text}}
             <div class="layui-input-block">
                 <textarea {{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}}disabled{{end}} name="{{$item.Field}}" class="layui-textarea" id="{{$item.Field}}" style="width: 90%;{{if or (eq $item.Field $.pkField) (eq $item.Readonly "true")}};background-color: #f8f8f8;{{end}}" value="{{$item.Value}}"></textarea>
             {{end}}
-            {{if eq $item.DBType "File"}}
+            {{if eq $item.DBType $.DisplayType.File}}
             <div class="layui-upload-drag" name="{{$item.Field}}-File" id="{{$item.Field}}-File">
                 <i class="layui-icon"></i>
                 <p>点击上传，或将文件拖拽到此处</p>
@@ -74,14 +74,14 @@
     layui.use('laydate', function(){
       var laydate = layui.laydate;
       {{range $i, $item := .display}}
-      {{if eq $item.DBType "Datetime"}}
+      {{if eq $item.DBType $.DisplayType.Datetime}}
       laydate.render({
         elem: '#{{$item.Field}}',
         type: 'datetime',
         value: new Date({{$item.Value}}),
       });
       {{end}}
-      {{if eq $item.DBType "Time"}}
+      {{if eq $item.DBType $.DisplayType.Time}}
       laydate.render({
         elem: '#{{$item.Field}}',
         type: 'time',
@@ -97,7 +97,7 @@
     var upload = layui.upload;
     var httpClients = {};
     {{range $i, $item := .display}}
-    {{if eq $item.DBType "M2M"}}
+    {{if eq $item.DBType $.DisplayType.M2M}}
     transfer.render({
       elem: '#{{$item.Field}}',  //绑定元素
       title: ["未选中", "已选中"]
@@ -124,7 +124,7 @@
     });
     {{end}}
     
-    {{if eq $item.DBType "File"}}
+    {{if eq $item.DBType $.DisplayType.File}}
     httpClients[{{$item.Field}}] = new XMLHttpRequest();
 
     {{if eq $item.CDN "true"}}
@@ -147,7 +147,7 @@
     layui.$('#{{$item.Field}}').attr('value', '{{$item.Value}}');
     {{end}}
     {{else}}
-    httpClients[{{$item.Field}}].open("GET", '{{$.prefix}}/{{$.path}}/ajaxgetfile?path={{$item.Value}}');
+    httpClients[{{$item.Field}}].open("GET", '{{$.prefix}}/{{$.path}}/ajaxdownload?path={{$item.Value}}');
     httpClients[{{$item.Field}}].send();
 
     httpClients[{{$item.Field}}].onreadystatechange = (e) => {
@@ -225,7 +225,7 @@ layui.use(['form','element','table','layer','jquery', 'transfer'],function(){
         var form_data = data.field;
         {{range $i, $item := .display}}
 
-        {{if eq $item.DBType "M2M"}}
+        {{if eq $item.DBType $.DisplayType.M2M}}
         var srcValues = transfer.getData({{$item.Field}});
         var destValues = []
         for (i=0; i<srcValues.length; i++) {
@@ -234,12 +234,12 @@ layui.use(['form','element','table','layer','jquery', 'transfer'],function(){
         form_data[{{$item.Field}}] = destValues;
         {{end}}
 
-        {{if eq $item.DBType "Time"}}
+        {{if eq $item.DBType $.DisplayType.Time}}
         var time = data.field[{{$item.Field}}].split(":");
         form_data[{{$item.Field}}] = parseInt(time[0])*3600 + parseInt(time[1])*60 + parseInt(time[2]);
         {{end}}
         
-        {{if eq $item.DBType "Bool"}}
+        {{if eq $item.DBType $.DisplayType.Bool}}
         if (document.getElementById({{$item.Field}}).checked) {
             form_data[{{$item.Field}}] = "on";
         } else {
@@ -250,7 +250,7 @@ layui.use(['form','element','table','layer','jquery', 'transfer'],function(){
         {{end}}
 
         console.log(form_data);
-        $.post('{{.prefix}}/{{.path}}/ajaxsave', form_data, function (out) {
+        $.post('{{.prefix}}/{{.path}}/ajaxupdate', form_data, function (out) {
             if (out.status == 0) {
                 layer.msg("操作成功",{icon: 1},function () {
                     window.location.reload();
@@ -266,7 +266,7 @@ layui.use(['form','element','table','layer','jquery', 'transfer'],function(){
         var form_data = data.field;
         {{range $i, $item := .display}}
         
-        {{if eq $item.DBType "M2M"}}
+        {{if eq $item.DBType $.DisplayType.M2M}}
         var srcValues = transfer.getData({{$item.Field}});
         var destValues = []
         for (i=0; i<srcValues.length; i++) {
@@ -275,12 +275,12 @@ layui.use(['form','element','table','layer','jquery', 'transfer'],function(){
         form_data[{{$item.Field}}] = destValues;
         {{end}}
 
-        {{if eq $item.DBType "Time"}}
+        {{if eq $item.DBType $.DisplayType.Time}}
         var time = data.field[{{$item.Field}}].split(":");
         form_data[{{$item.Field}}] = parseInt(time[0])*3600 + parseInt(time[1])*60 + parseInt(time[2]);
         {{end}}
 
-        {{if eq $item.DBType "Bool"}}
+        {{if eq $item.DBType $.DisplayType.Bool}}
         if (document.getElementById({{$item.Field}}).checked) {
             form_data[{{$item.Field}}] = "on";
         } else {
@@ -290,7 +290,7 @@ layui.use(['form','element','table','layer','jquery', 'transfer'],function(){
 
         {{end}}
         console.log(form_data);
-        $.post('{{.prefix}}/{{.path}}/ajaxsave', form_data, function (out) {
+        $.post('{{.prefix}}/{{.path}}/ajaxupdate', form_data, function (out) {
             if (out.status == 0) {
                 layer.msg("操作成功",{icon: 1},function () {
                     var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引

@@ -10,6 +10,38 @@ import (
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 )
 
+type displayType struct {
+	ForeignKey string
+	M2M        string
+	O2O        string
+
+	File string
+
+	Text     string
+	Char     string
+	Bool     string
+	Number   string
+	Datetime string
+	Date     string
+	Time     string
+}
+
+var DisplayType = displayType{
+	ForeignKey: "ForeignKey",
+	M2M:        "M2M",
+	O2O:        "O2O",
+
+	File: "File",
+
+	Text:     "Text",
+	Char:     "Char",
+	Bool:     "Bool",
+	Number:   "Number",
+	Datetime: "Datetime",
+	Date:     "Date",
+	Time:     "Time",
+}
+
 // DisplayItem 管理后台列表、表单显示配置项
 type DisplayItem struct {
 	Field     string `json:"field"`
@@ -85,15 +117,15 @@ func fieldParse(field reflect.StructField) (tagsMaps []map[string]string) {
 			case "dbtype":
 				switch field.Type.Kind() {
 				case reflect.String:
-					tagsMap[tag] = "Char"
+					tagsMap[tag] = DisplayType.Char
 				case reflect.Int,
 					reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 					reflect.Float32, reflect.Float64:
-					tagsMap[tag] = "Number"
+					tagsMap[tag] = DisplayType.Number
 				case reflect.Bool:
-					tagsMap[tag] = "Bool"
+					tagsMap[tag] = DisplayType.Bool
 				case reflect.Slice:
-					tagsMap[tag] = "M2M"
+					tagsMap[tag] = DisplayType.M2M
 				case reflect.Struct:
 					if field.Name == field.Type.Name() {
 						v := reflect.New(field.Type).Elem()
@@ -103,28 +135,28 @@ func fieldParse(field reflect.StructField) (tagsMaps []map[string]string) {
 							tagsMaps = append(tagsMaps, subTagsMap...)
 						}
 						return
-					} else if field.Type.Name() == "Time" {
-						tagsMap[tag] = "Datetime"
+					} else if field.Type.Name() == DisplayType.Time {
+						tagsMap[tag] = DisplayType.Datetime
 					} else {
-						tagsMap[tag] = "ForeignKey"
+						tagsMap[tag] = DisplayType.ForeignKey
 					}
 				case reflect.Ptr:
 					switch field.Type.Elem().Kind() {
 					case reflect.String:
-						tagsMap[tag] = "Char"
+						tagsMap[tag] = DisplayType.Char
 					case reflect.Int,
 						reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 						reflect.Float32, reflect.Float64:
-						tagsMap[tag] = "Number"
+						tagsMap[tag] = DisplayType.Number
 					case reflect.Bool:
-						tagsMap[tag] = "Bool"
+						tagsMap[tag] = DisplayType.Bool
 					case reflect.Slice:
-						tagsMap[tag] = "M2M"
+						tagsMap[tag] = DisplayType.M2M
 					case reflect.Struct:
-						if field.Type.Name() == "Time" {
-							tagsMap[tag] = "Datetime"
+						if field.Type.Name() == DisplayType.Time {
+							tagsMap[tag] = DisplayType.Datetime
 						} else {
-							tagsMap[tag] = "ForeignKey"
+							tagsMap[tag] = DisplayType.ForeignKey
 						}
 					}
 				default:
@@ -175,7 +207,7 @@ func (c *GEAdminBaseController) DisplayItems(model geamodels.Model) *[]DisplayIt
 			displayItem := new(DisplayItem)
 			json.Unmarshal(tagsMapJSON, displayItem)
 
-			if tagsMap["dbtype"] == "M2M" || tagsMap["dbtype"] == "O2O" || tagsMap["dbtype"] == "ForeignKey" {
+			if tagsMap["dbtype"] == DisplayType.M2M || tagsMap["dbtype"] == DisplayType.O2O || tagsMap["dbtype"] == DisplayType.ForeignKey {
 				switch t.Field(i).Type.Kind() {
 				case reflect.Slice:
 					st := reflect.New(t.Field(i).Type.Elem())
@@ -224,7 +256,7 @@ func CopyDisplayItems(src *[]DisplayItem) *[]DisplayItem {
 func DisplayFields(display *[]DisplayItem) []string {
 	fields := []string{}
 	for _, d := range *display {
-		if d.DBType == "M2M" || d.DBType == "O2O" || d.DBType == "ForeignKey" {
+		if d.DBType == DisplayType.M2M || d.DBType == DisplayType.O2O || d.DBType == DisplayType.ForeignKey {
 			fields = append(fields, fmt.Sprintf("%s__%s", reflect.TypeOf(d.Model).Elem().Name(), d.Index))
 		} else {
 			fields = append(fields, d.Field)
@@ -242,20 +274,20 @@ func Struct2MapWithHTML(obj *map[string]interface{}, display *[]DisplayItem) map
 			item.Value = nil
 		}
 		switch item.DBType {
-		case "Bool":
+		case DisplayType.Bool:
 			if item.Value.(bool) {
 				data[item.Field] = "<span style=\"color: #91c799; font-weight: bold;\">True</span>"
 			} else {
 				data[item.Field] = "<span style=\"color: #F581B1; font-weight: bold;\">False</span>"
 			}
-		case "Datetime":
+		case DisplayType.Datetime:
 			switch item.Value.(type) {
 			case int64:
 				data[item.Field] = time.Unix(item.Value.(int64), 0).Format("2006-01-02 15:04:05")
 			case string:
 				data[item.Field] = item.Value.(string)
 			}
-		case "Time":
+		case DisplayType.Time:
 			second := item.Value.(int)
 			data[item.Field] = fmt.Sprintf(
 				"%02d:%02d:%02d",
@@ -263,7 +295,7 @@ func Struct2MapWithHTML(obj *map[string]interface{}, display *[]DisplayItem) map
 				(second%3600)/60,
 				(second%3600)%60,
 			)
-		case "ForeignKey", "O2O":
+		case DisplayType.ForeignKey, DisplayType.O2O:
 			if item.Value == nil {
 				continue
 			}
@@ -294,7 +326,7 @@ func Struct2MapWithHTML(obj *map[string]interface{}, display *[]DisplayItem) map
 			}
 
 			data[item.Field] = values
-		case "M2M":
+		case DisplayType.M2M:
 			if item.Value == nil {
 				continue
 			}
