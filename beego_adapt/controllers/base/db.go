@@ -135,6 +135,7 @@ func (c *AdaptController) GEADataBaseQueryRow(
 	return row
 }
 
+// TODO M2M O2O FK 处理
 func (c *AdaptController) GEADataBaseInsert(model geamodels.Model) (int64, error) {
 	ID, err := orm.NewOrm().Insert(model)
 	return ID, err

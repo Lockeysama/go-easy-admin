@@ -1,10 +1,10 @@
 package main
 
 import (
+	_ "github.com/lockeysama/go-easy-admin/examples/beego/models"
+	_ "github.com/lockeysama/go-easy-admin/examples/beego/routers"
 	"github.com/lockeysama/go-easy-admin/geadmin/utils"
 	"github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
-	_ "github.com/lockeysama/go-easy-admin/models"
-	_ "github.com/lockeysama/go-easy-admin/routers"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
