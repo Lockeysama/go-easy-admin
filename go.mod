@@ -25,3 +25,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/gorm v1.21.14
 )
+
+retract 0.1.1
