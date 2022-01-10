@@ -35,13 +35,13 @@ func SetGEACasbinAdapter(adapter GEACasbinAdapter) {
 type CasbinRule struct {
 	ModelBase
 	ID    int64
-	PType string `display:"title=类型"`   // Policy Type - 用于区分 policy和 group(role)
-	V0    string `display:"title=角色"`   // subject
-	V1    string `display:"title=资源"`   // object
-	V2    string `display:"title=权限"`   // action
-	V3    string `display:"title=预留字段"` // 这个和下面的字段无用，仅预留位置，如果你的不是 \
-	V4    string `display:"title=预留字段"` // 	sub, obj, act的话才会用到
-	V5    string `display:"title=预留字段"` // 	如 sub, obj, act, suf就会用到 V3
+	PType string `gea:"title=类型"`   // Policy Type - 用于区分 policy和 group(role)
+	V0    string `gea:"title=角色"`   // subject
+	V1    string `gea:"title=资源"`   // object
+	V2    string `gea:"title=权限"`   // action
+	V3    string `gea:"title=预留字段"` // 这个和下面的字段无用，仅预留位置，如果你的不是 \
+	V4    string `gea:"title=预留字段"` // 	sub, obj, act的话才会用到
+	V5    string `gea:"title=预留字段"` // 	如 sub, obj, act, suf就会用到 V3
 }
 
 // Adapter Casbin 适配器

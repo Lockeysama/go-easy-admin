@@ -85,7 +85,7 @@ var DisplayItemsCache = make(map[string]*[]DisplayItem)
 func fieldParse(field reflect.StructField) (tagsMaps []map[string]string) {
 	tagsMap := make(map[string]string)
 
-	tags := strings.Split(field.Tag.Get("display"), ";")
+	tags := strings.Split(field.Tag.Get("gea"), ";")
 	if len(tags) < 1 || tags[0] == "-" {
 		return
 	}

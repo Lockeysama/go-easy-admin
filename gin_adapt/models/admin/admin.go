@@ -2,8 +2,8 @@ package adminmodels
 
 import (
 	"github.com/beego/beego/v2/client/orm"
+	"gorm.io/gorm"
 
-	basemodels "github.com/lockeysama/go-easy-admin/beego_adapt/models/base"
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 )
 
@@ -13,17 +13,18 @@ func init() {
 
 // Admin 管理员
 type Admin struct {
-	basemodels.NormalModel
-	UserName  string  `orm:"unique" description:"用户名" display:"title=用户名"`
-	Password  string  `description:"密码" display:"-"`
-	RealName  string  `description:"真实姓名" display:"title=真实姓名"`
-	Phone     string  `description:"电话" display:"title=电话"`
-	Email     string  `description:"电邮" display:"title=电邮"`
-	Avatar    string  `gea:"title=头像;dbtype=File;required=false;meta=admin/avatar/"`
-	Status    bool    `description:"状态" display:"title=状态"`
-	LastLogin int64   `orm:"auto_now" description:"最后登录时间" display:"title=最后登录时间;dbtype=Datetime"`
-	LastIP    string  `orm:"column(last_ip)" description:"最后登录 IP" display:"title=最后登录 IP"`
-	Roles     []*Role `orm:"-" description:"拥有角色" display:"title=拥有角色;showfield=Name"`
+	gorm.Model
+	Deleted   bool
+	UserName  string  `gorm:"size:32" gea:"title=用户名"`
+	Password  string  `gorm:"size:512" gea:"-"`
+	RealName  string  `gorm:"size:32" gea:"title=真实姓名"`
+	Phone     string  `gorm:"size:16" gea:"title=电话"`
+	Email     string  `gorm:"size:32" gea:"title=电邮"`
+	Avatar    string  `gorm:"size:256" gea:"title=头像;dbtype=File;required=false;meta=admin/avatar/"`
+	Status    bool    `gea:"title=状态"`
+	LastLogin int64   `gea:"title=最后登录时间;dbtype=Datetime"`
+	LastIP    string  `gorm:"size:32" gea:"title=最后登录 IP"`
+	Roles     []*Role `gea:"title=拥有角色;showfield=Name"`
 }
 
 func (m *Admin) LoadM2M() {
@@ -31,7 +32,7 @@ func (m *Admin) LoadM2M() {
 }
 
 func (m *Admin) GetID() int64 {
-	return m.ID
+	return int64(m.ID)
 }
 
 func (m *Admin) GetUserName() string {
