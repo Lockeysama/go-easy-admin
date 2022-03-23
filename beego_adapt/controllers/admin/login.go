@@ -11,7 +11,6 @@ import (
 
 	basecontrollers "github.com/lockeysama/go-easy-admin/beego_adapt/controllers/base"
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
-	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
 
 	adminmodels "github.com/lockeysama/go-easy-admin/beego_adapt/models/admin"
 )
@@ -64,10 +63,10 @@ func (c *LoginController) Login() {
 						},
 					)
 
-				cache.MemCache().Set(
-					fmt.Sprintf("uid%d", user.ID),
-					user,
-				)
+				// cache.MemCache().Set(
+				// 	fmt.Sprintf("uid%d", user.ID),
+				// 	user,
+				// )
 				hash := md5.New()
 				hash.Write([]byte(user.Password + geamodels.Salt))
 				authkey := fmt.Sprintf("%x", hash.Sum(nil))
