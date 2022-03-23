@@ -125,7 +125,7 @@ func Struct2Map(obj interface{}) map[string]interface{} {
 			if t.Field(i).Type.Name() == DisplayType.Time {
 				data[t.Field(i).Name] = v.Field(i).Interface()
 			} else {
-				data[t.Field(i).Name] = Struct2Map(v.Field(i))
+				data[t.Field(i).Name] = Struct2Map(v.Field(i).Interface())
 			}
 		case reflect.Slice:
 			s := reflect.ValueOf(v.Field(i).Interface())
