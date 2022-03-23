@@ -1,56 +1,68 @@
 package cache
 
 import (
-	"fmt"
 	"time"
-
-	"github.com/patrickmn/go-cache"
 )
 
+type Cache map[string]interface{}
+
+type Caches map[string]Cache
+
 // Cache 全局缓存实例
-var _memCache map[string]*cache.Cache
+var _memCache map[string]Caches
 
 // DefaultMemCacheExpiration 默认过期时间
 var DefaultMemCacheExpiration time.Duration
 
-// DefaultCleanupInterval 默认缓存清除时间
-var DefaultMemCacheCleanupInterval time.Duration
-
 // DefaultCacheName 默认缓存实例名称
 const DefaultMemCacheName = "default"
 
-// InitCache 初始化缓存
-func InitCache() {
-	_memCache = make(map[string]*cache.Cache)
-	if DefaultMemCacheExpiration == 0 {
-		DefaultMemCacheExpiration = time.Hour
-	}
-	if DefaultMemCacheCleanupInterval == 0 {
-		DefaultMemCacheCleanupInterval = time.Hour * 2
-	}
-	NewCache(DefaultMemCacheName, DefaultMemCacheExpiration, DefaultMemCacheCleanupInterval)
-}
-
-// NewCache 新建缓存实例
-func NewCache(name string, expiration time.Duration, cleanupInterval time.Duration) *cache.Cache {
-	if _, ok := _memCache[name]; !ok {
-		_memCache[name] = cache.New(expiration, cleanupInterval)
-	}
-	return _memCache[name]
-}
-
 // Cache 根据名称获取 Cache 实例
-func MemCache(name string) *cache.Cache {
+func MemCache(args ...string) Caches {
+	var name string
+	if len(args) == 0 {
+		name = DefaultMemCacheName
+	}
+	if _memCache == nil {
+		_memCache = make(map[string]Caches)
+		if DefaultMemCacheExpiration == 0 {
+			DefaultMemCacheExpiration = time.Hour
+		}
+	}
 	if _, ok := _memCache[name]; !ok {
-		panic(fmt.Sprintf("cache \"%s\" not found", name))
+		_memCache[name] = make(Caches)
 	}
 	return _memCache[name]
 }
 
-// DefaultCache 获取默认 Cache 实例
-func DefaultMemCache() *cache.Cache {
-	if defaultCache, ok := _memCache[DefaultMemCacheName]; ok {
-		return defaultCache
+// Set Cache
+func (c Caches) Set(key string, value interface{}, expire ...time.Duration) {
+	if _, ok := c[key]; !ok {
+		c[key] = make(Cache)
 	}
-	panic("default cache not found, please called \"InitCache\" method.")
+	var _expire time.Duration
+	if len(expire) == 0 {
+		_expire = DefaultMemCacheExpiration
+	} else {
+		_expire = expire[0]
+	}
+	c[key]["expire"] = time.Now().Unix() + int64(_expire)
+	c[key]["value"] = value
+}
+
+// Get Cache
+func (c Caches) Get(key string) interface{} {
+	if cache, ok := c[key]; !ok {
+		return nil
+	} else {
+		if expire, ok := cache["expire"]; !ok || expire.(int64) < time.Now().Unix() {
+			delete(c, key)
+			return nil
+		}
+		if value, ok := cache["value"]; ok {
+			return value
+		}
+		delete(c, key)
+		return nil
+	}
 }

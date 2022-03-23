@@ -23,7 +23,7 @@ type Admin struct {
 	Status    bool    `description:"状态" display:"title=状态"`
 	LastLogin int64   `orm:"auto_now" description:"最后登录时间" display:"title=最后登录时间;dbtype=Datetime"`
 	LastIP    string  `orm:"column(last_ip)" description:"最后登录 IP" display:"title=最后登录 IP"`
-	Roles     []*Role `orm:"-" description:"拥有角色" display:"title=拥有角色;showfield=Name"`
+	Roles     []*Role `orm:"reverse(many)" description:"拥有角色" display:"title=拥有角色;showfield=Name"`
 }
 
 func (m *Admin) LoadM2M() {

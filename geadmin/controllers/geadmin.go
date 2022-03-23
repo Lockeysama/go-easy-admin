@@ -471,8 +471,8 @@ func (c *GEAdminBaseController) auth() {
 				err  error
 			)
 
-			cacheUser, found := cache.DefaultMemCache().Get("uid" + strconv.Itoa(userID))
-			if found && cacheUser != nil { //从缓存取用户
+			cacheUser := cache.MemCache().Get("uid" + strconv.Itoa(userID))
+			if cacheUser != nil { //从缓存取用户
 				user = cacheUser.(geamodels.GEAdmin)
 			} else {
 				user = geamodels.GetGEAdminAdapter().QueryWithID(int64(userID))
@@ -497,10 +497,9 @@ func (c *GEAdminBaseController) auth() {
 						return
 					} else {
 						user.SetRoles(roles)
-						cache.DefaultMemCache().Set(
+						cache.MemCache().Set(
 							"uid"+strconv.Itoa(userID),
 							user,
-							cache.DefaultMemCacheExpiration,
 						)
 					}
 				}

@@ -1,21 +1,29 @@
 package adminmodels
 
 import (
-	"github.com/beego/beego/v2/client/orm"
+	"fmt"
+
+	ginmodels "github.com/lockeysama/go-easy-admin/gin_adapt/models"
+	"gorm.io/gorm"
 
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
-	basemodels "github.com/lockeysama/go-easy-admin/gin_adapt/models/base"
 )
 
 func init() {
-	orm.RegisterModelWithPrefix("admin_", new(AdminRole))
+	if err := ginmodels.DB().AutoMigrate(&AdminRole{}); err != nil {
+		fmt.Println(err.Error())
+	}
 }
 
 // AdminRole
 type AdminRole struct {
-	basemodels.NormalModel
-	AdminID int64 `orm:"column(admin_id)"`
-	RoleID  int64 `orm:"column(role_id)"`
+	gorm.Model
+	AdminID int64
+	RoleID  int64
+}
+
+func (t AdminRole) TableName() string {
+	return "admin_admin_role"
 }
 
 func (m *AdminRole) LoadM2M() {
@@ -23,7 +31,7 @@ func (m *AdminRole) LoadM2M() {
 }
 
 func (m *AdminRole) GetID() int64 {
-	return m.ID
+	return int64(m.ID)
 }
 
 func (m *AdminRole) GetGEAdminID() int64 {
@@ -42,12 +50,7 @@ func (adapter *AdminRoleAdapter) NewGEAdminRole(adminID int64, roleID int64) gea
 
 func (adapter *AdminRoleAdapter) QueryWithID(adminID int64) []geamodels.GEAdminRole {
 	adminRoles := new([]*AdminRole)
-	if _, err := orm.NewOrm().
-		QueryTable(&AdminRole{}).
-		Filter("AdminID", adminID).
-		All(adminRoles); err != nil {
-		return nil
-	}
+	ginmodels.DB().Find(adminRoles, adminID)
 
 	roles := new([]geamodels.GEAdminRole)
 	for _, role := range *adminRoles {
@@ -57,6 +60,12 @@ func (adapter *AdminRoleAdapter) QueryWithID(adminID int64) []geamodels.GEAdminR
 }
 
 func (adapter *AdminRoleAdapter) Create(adminRole geamodels.GEAdminRole) (ID int64, err error) {
-	_, ID, err = orm.NewOrm().ReadOrCreate(adminRole, "AdminID", "RoleID")
+	row := new(AdminRole)
+	row.ID = uint(adminRole.GetID())
+	row.AdminID = adminRole.GetGEAdminID()
+	row.RoleID = adminRole.GetGEARoleID()
+	result := ginmodels.DB().Create(row)
+	ID = int64(row.ID)
+	err = result.Error
 	return
 }

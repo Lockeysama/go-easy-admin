@@ -80,8 +80,8 @@ func SideTree(path map[string][]string) *[]SideNode {
 
 // SideTreeAuth Admin 授权验证
 func (c *GEAdminBaseController) SideTreeAuth() {
-	sideTree, found := cache.DefaultMemCache().Get(fmt.Sprintf("SideTree%d", c.User.GetID()))
-	if found && sideTree != nil { //从缓存取菜单
+	sideTree := cache.MemCache().Get(fmt.Sprintf("SideTree%d", c.User.GetID()))
+	if sideTree != nil { //从缓存取菜单
 		sideTree := sideTree.(*[]SideNode)
 		c.SetData("SideTree", sideTree)
 	} else {
@@ -89,10 +89,9 @@ func (c *GEAdminBaseController) SideTreeAuth() {
 		casbinRoles := geamodels.AdminPathPermissions()
 		sideTree := SideTree(casbinRoles)
 		c.SetData("SideTree", sideTree)
-		cache.DefaultMemCache().Set(
+		cache.MemCache().Set(
 			fmt.Sprintf("SideTree%d", c.User.GetID()),
 			sideTree,
-			cache.DefaultMemCacheExpiration,
 		)
 	}
 }

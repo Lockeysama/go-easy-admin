@@ -1,26 +1,36 @@
 package adminmodels
 
 import (
-	"github.com/beego/beego/v2/client/orm"
+	"fmt"
+
+	ginmodels "github.com/lockeysama/go-easy-admin/gin_adapt/models"
 
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 	basemodels "github.com/lockeysama/go-easy-admin/gin_adapt/models/base"
 )
 
 func init() {
-	orm.RegisterModelWithPrefix("admin_", new(Role))
+	if err := ginmodels.DB().AutoMigrate(&Role{}); err != nil {
+		fmt.Println(err.Error())
+	}
 }
 
 // Role 角色
 type Role struct {
-	basemodels.ModelBase
-	basemodels.NormalModel
-	Name         string   `orm:"unique" description:"名称" json:"name" display:"title=角色名"`
-	Description  string   `description:"描述" json:"description" display:"title=描述;dbtype=Text"`
-	Status       int      `description:"状态" json:"status" display:"title=状态"`
-	CreatedAdmin *Admin   `orm:"rel(fk)" description:"创建者" json:"created_admin" display:"title=创建者;showfield=UserName"`
-	UpdatedAdmin *Admin   `orm:"rel(fk)" description:"最后一次修改者" json:"updated_admin" display:"title=最后一次修改者;showfield=UserName"`
-	Admins       []*Admin `orm:"-" description:"角色拥有者" json:"admins" display:"-"`
+	basemodels.ModelBase   `gorm:"embedded"`
+	basemodels.NormalModel `gorm:"embedded"`
+	Name                   string `gorm:"unique" comment:"名称" json:"name" display:"title=角色名"`
+	Description            string `comment:"描述" json:"description" display:"title=描述;dbtype=Text"`
+	Status                 int    `comment:"状态" json:"status" display:"title=状态"`
+	CreatedAdminID         int64
+	CreatedAdmin           *Admin `comment:"创建者" json:"created_admin" display:"title=创建者;showfield=UserName"`
+	UpdatedAdminID         int64
+	UpdatedAdmin           *Admin   `comment:"最后一次修改者" json:"updated_admin" display:"title=最后一次修改者;showfield=UserName"`
+	Admins                 []*Admin `gorm:"-" description:"角色拥有者" json:"admins" display:"-"`
+}
+
+func (m Role) TableName() string {
+	return "admin_role"
 }
 
 func (m *Role) GetID() int64 {
@@ -67,26 +77,29 @@ func (adapter *RoleAdapter) NewGEARole(name string, creator geamodels.GEAdmin) g
 
 func (adapter *RoleAdapter) QueryAdminRole() (role geamodels.GEARole, err error) {
 	role = new(Role)
-	err = orm.NewOrm().
-		QueryTable(&Role{}).
-		Filter("Name", "role_"+geamodels.DefaultGEAdminUsername).
-		One(role)
+	result := ginmodels.DB().Model(&Role{}).First(role, "Name", "role_"+geamodels.DefaultGEAdminUsername)
+	err = result.Error
 	return role, err
 }
 
 func (adapter *RoleAdapter) QueryRoleWithID(IDs ...int64) ([]geamodels.GEARole, error) {
 	roles := new([]*Role)
-	_, err := orm.NewOrm().QueryTable(&Role{}).Filter("id__in", IDs).All(roles)
+	result := ginmodels.DB().Find(roles, IDs)
+	if result.Error != nil {
+		return nil, result.Error
+	}
 
 	geaRoles := new([]geamodels.GEARole)
 	for _, role := range *roles {
 		*geaRoles = append(*geaRoles, role)
 	}
-	return *geaRoles, err
+	return *geaRoles, result.Error
 }
 
 func (adapter *RoleAdapter) ReadOrCreate(
 	role geamodels.GEARole, field string) (isCreate bool, ID int64, err error,
 ) {
-	return orm.NewOrm().ReadOrCreate(role, field)
+	result := ginmodels.DB().Model(&Role{}).FirstOrCreate(role, role)
+	ID = role.GetID()
+	return result.Error == nil, ID, result.Error
 }

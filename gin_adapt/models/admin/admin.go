@@ -1,20 +1,23 @@
 package adminmodels
 
 import (
-	"github.com/beego/beego/v2/client/orm"
+	"fmt"
+
+	ginmodels "github.com/lockeysama/go-easy-admin/gin_adapt/models"
 	"gorm.io/gorm"
 
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 )
 
 func init() {
-	orm.RegisterModelWithPrefix("admin_", new(Admin))
+	if err := ginmodels.DB().AutoMigrate(&Admin{}); err != nil {
+		fmt.Println(err.Error())
+	}
 }
 
 // Admin 管理员
 type Admin struct {
 	gorm.Model
-	Deleted   bool
 	UserName  string  `gorm:"size:32" gea:"title=用户名"`
 	Password  string  `gorm:"size:512" gea:"-"`
 	RealName  string  `gorm:"size:32" gea:"title=真实姓名"`
@@ -24,7 +27,11 @@ type Admin struct {
 	Status    bool    `gea:"title=状态"`
 	LastLogin int64   `gea:"title=最后登录时间;dbtype=Datetime"`
 	LastIP    string  `gorm:"size:32" gea:"title=最后登录 IP"`
-	Roles     []*Role `gea:"title=拥有角色;showfield=Name"`
+	Roles     []*Role `gorm:"-" gea:"title=拥有角色;showfield=Name"`
+}
+
+func (t Admin) TableName() string {
+	return "admin_admin"
 }
 
 func (m *Admin) LoadM2M() {
@@ -80,24 +87,27 @@ func (adapter *AdminAdapter) NewGEAdmin(username string, password string) geamod
 
 func (adapter *AdminAdapter) Administrator() geamodels.GEAdmin {
 	admin := new(Admin)
-	if err := orm.NewOrm().QueryTable(admin).
-		Filter("UserName", geamodels.DefaultGEAdminUsername).
-		One(admin); err != nil {
-		return nil
-	}
+	ginmodels.DB().Where("user_name", geamodels.DefaultGEAdminUsername).First(admin)
 	return admin
 }
 
 func (adapter *AdminAdapter) QueryWithID(ID int64) geamodels.GEAdmin {
 	admin := new(Admin)
-	if err := orm.NewOrm().QueryTable(admin).Filter("ID", ID).One(admin); err != nil {
-		return nil
-	}
+	ginmodels.DB().First(admin, ID)
 	return admin
 }
 
 func (adapter *AdminAdapter) ReadOrCreate(
 	admin geamodels.GEAdmin, field string,
 ) (isCreate bool, ID int64, err error) {
-	return orm.NewOrm().ReadOrCreate(admin, field)
+	_admin := new(Admin)
+	_admin.ID = uint(admin.GetID())
+	_admin.UserName = admin.GetUserName()
+	_admin.Password = admin.GetPassword()
+	_admin.RealName = admin.GetRealName()
+	_admin.Avatar = admin.GetAvatar()
+	result := ginmodels.DB().FirstOrCreate(_admin, *_admin)
+	ID = _admin.GetID()
+	err = result.Error
+	return
 }
