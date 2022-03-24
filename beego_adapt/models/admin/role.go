@@ -15,12 +15,12 @@ func init() {
 type Role struct {
 	basemodels.ModelBase
 	basemodels.NormalModel
-	Name         string   `orm:"unique" description:"名称" json:"name" display:"title=角色名"`
-	Description  string   `description:"描述" json:"description" display:"title=描述;dbtype=Text"`
-	Status       int      `description:"状态" json:"status" display:"title=状态"`
-	CreatedAdmin *Admin   `orm:"rel(fk)" description:"创建者" json:"created_admin" display:"title=创建者;showfield=UserName"`
-	UpdatedAdmin *Admin   `orm:"rel(fk)" description:"最后一次修改者" json:"updated_admin" display:"title=最后一次修改者;showfield=UserName"`
-	Admins       []*Admin `orm:"-" description:"角色拥有者" json:"admins" display:"-"`
+	Name         string   `orm:"unique" description:"名称" json:"name" gea:"title=角色名"`
+	Description  string   `description:"描述" json:"description" gea:"title=描述;dbtype=Text"`
+	Status       int      `description:"状态" json:"status" gea:"title=状态"`
+	CreatedAdmin *Admin   `orm:"rel(fk)" description:"创建者" json:"created_admin" gea:"title=创建者;showfield=UserName"`
+	UpdatedAdmin *Admin   `orm:"rel(fk)" description:"最后一次修改者" json:"updated_admin" gea:"title=最后一次修改者;showfield=UserName"`
+	Admins       []*Admin `orm:"-" description:"角色拥有者" json:"admins" gea:"-"`
 }
 
 func (m *Role) GetID() int64 {

@@ -19,14 +19,14 @@ func init() {
 type Role struct {
 	basemodels.ModelBase   `gorm:"embedded"`
 	basemodels.NormalModel `gorm:"embedded"`
-	Name                   string `gorm:"unique" comment:"名称" json:"name" display:"title=角色名"`
-	Description            string `comment:"描述" json:"description" display:"title=描述;dbtype=Text"`
-	Status                 int    `comment:"状态" json:"status" display:"title=状态"`
+	Name                   string `gorm:"unique" comment:"名称" json:"name" gea:"title=角色名"`
+	Description            string `comment:"描述" json:"description" gea:"title=描述;dbtype=Text"`
+	Status                 int    `comment:"状态" json:"status" gea:"title=状态"`
 	CreatedAdminID         int64
-	CreatedAdmin           *Admin `comment:"创建者" json:"created_admin" display:"title=创建者;showfield=UserName"`
+	CreatedAdmin           *Admin `comment:"创建者" json:"created_admin" gea:"title=创建者;showfield=UserName"`
 	UpdatedAdminID         int64
-	UpdatedAdmin           *Admin   `comment:"最后一次修改者" json:"updated_admin" display:"title=最后一次修改者;showfield=UserName"`
-	Admins                 []*Admin `gorm:"-" description:"角色拥有者" json:"admins" display:"-"`
+	UpdatedAdmin           *Admin   `comment:"最后一次修改者" json:"updated_admin" gea:"title=最后一次修改者;showfield=UserName"`
+	Admins                 []*Admin `gorm:"-" description:"角色拥有者" json:"admins" gea:"-"`
 }
 
 func (m Role) TableName() string {

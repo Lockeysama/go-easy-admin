@@ -125,7 +125,10 @@ func Struct2Map(obj interface{}) map[string]interface{} {
 			if t.Field(i).Type.Name() == DisplayType.Time {
 				data[t.Field(i).Name] = v.Field(i).Interface()
 			} else {
-				data[t.Field(i).Name] = Struct2Map(v.Field(i).Interface())
+				structData := Struct2Map(v.Field(i).Interface())
+				for k, v := range structData {
+					data[k] = v
+				}
 			}
 		case reflect.Slice:
 			s := reflect.ValueOf(v.Field(i).Interface())
@@ -173,7 +176,7 @@ func (c *GEAdminBaseController) Add() {
 		}
 	}
 	c.SetData("linkItems", linkItemsMap)
-	c.SetData("linkItems", items)
+	c.SetData("display", items)
 	c.SetLayout("public/layout.html")
 	c.SetTplName("public/add.html")
 

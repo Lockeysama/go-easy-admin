@@ -14,16 +14,16 @@ func init() {
 // Admin 管理员
 type Admin struct {
 	basemodels.NormalModel
-	UserName  string  `orm:"unique" description:"用户名" display:"title=用户名"`
-	Password  string  `description:"密码" display:"-"`
-	RealName  string  `description:"真实姓名" display:"title=真实姓名"`
-	Phone     string  `description:"电话" display:"title=电话"`
-	Email     string  `description:"电邮" display:"title=电邮"`
+	UserName  string  `orm:"unique" description:"用户名" gea:"title=用户名"`
+	Password  string  `description:"密码" gea:"-"`
+	RealName  string  `description:"真实姓名" gea:"title=真实姓名"`
+	Phone     string  `description:"电话" gea:"title=电话"`
+	Email     string  `description:"电邮" gea:"title=电邮"`
 	Avatar    string  `gea:"title=头像;dbtype=File;required=false;meta=admin/avatar/"`
-	Status    bool    `description:"状态" display:"title=状态"`
-	LastLogin int64   `orm:"auto_now" description:"最后登录时间" display:"title=最后登录时间;dbtype=Datetime"`
-	LastIP    string  `orm:"column(last_ip)" description:"最后登录 IP" display:"title=最后登录 IP"`
-	Roles     []*Role `orm:"reverse(many)" description:"拥有角色" display:"title=拥有角色;showfield=Name"`
+	Status    bool    `description:"状态" gea:"title=状态"`
+	LastLogin int64   `orm:"auto_now" description:"最后登录时间" gea:"title=最后登录时间;dbtype=Datetime"`
+	LastIP    string  `orm:"column(last_ip)" description:"最后登录 IP" gea:"title=最后登录 IP"`
+	Roles     []*Role `orm:"reverse(many)" description:"拥有角色" gea:"title=拥有角色;showfield=Name"`
 }
 
 func (m *Admin) LoadM2M() {
