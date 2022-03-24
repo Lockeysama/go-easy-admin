@@ -178,6 +178,7 @@ func (c *GEAdminBaseController) parser(displayItems *[]DisplayItem) map[string]i
 				}
 			}
 		}
+		params[item.Field] = DefaultValueMake(params[item.Field], &item)
 
 	}
 	return params

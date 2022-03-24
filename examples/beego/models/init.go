@@ -11,6 +11,8 @@ import (
 	"github.com/beego/beego/v2/client/orm"
 
 	beegoadapt "github.com/lockeysama/go-easy-admin/beego_adapt"
+
+	_ "github.com/lockeysama/go-easy-admin/examples/beego/models/application"
 )
 
 func init() {

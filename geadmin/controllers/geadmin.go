@@ -373,6 +373,7 @@ func (c *GEAdminBaseController) Edit() {
 			} else {
 				(*gp)[i].Value = v.FieldByName(item.Field).Interface()
 			}
+			(*gp)[i].Value = DefaultValueMake((*gp)[i].Value, &item)
 		}
 		c.SetData("linkItems", linkItemsMap)
 	}

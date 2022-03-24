@@ -10,6 +10,61 @@ import (
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 )
 
+// Maker 默认值生成函数钩子
+type DefaultValueMaker func() interface{}
+
+var defaultValueMakers map[string]DefaultValueMaker
+
+func DefaultValueMakerRegister(name string, hook DefaultValueMaker) {
+	if defaultValueMakers == nil {
+		defaultValueMakers = make(map[string]DefaultValueMaker)
+	}
+	defaultValueMakers[name] = hook
+}
+
+func DefaultValueMake(value interface{}, item *DisplayItem) interface{} {
+	if defaultValueMakers == nil {
+		defaultValueMakers = make(map[string]DefaultValueMaker)
+		return value
+	}
+	if hook, ok := defaultValueMakers[item.Maker]; ok {
+		make := false
+		switch item.DBType {
+		case DisplayType.ForeignKey, DisplayType.O2O:
+			if value == nil {
+				make = true
+			}
+		case DisplayType.M2M:
+			if len(value.([]interface{})) == 0 {
+				make = true
+			}
+
+		case DisplayType.Text, DisplayType.Char:
+			if value == "" {
+				make = true
+			}
+		case DisplayType.Bool:
+			if value == false {
+				make = true
+			}
+		case DisplayType.Number:
+			if value == 0 {
+				make = true
+			}
+
+		case DisplayType.Datetime, DisplayType.Date, DisplayType.Time:
+			if value == 0 {
+				make = true
+			}
+		}
+		if make {
+			return hook()
+		}
+		return value
+	}
+	return value
+}
+
 type displayType struct {
 	ForeignKey string
 	M2M        string
@@ -53,6 +108,7 @@ type DisplayItem struct {
 	CDN       string `json:"cdn"`
 	Required  string `json:"required"`
 	Readonly  string `json:"readonly"`
+	Maker     string `json:"maker"`
 	ShowField string `json:"showfield"`
 	Index     string `json:"index"`
 	Model     geamodels.Model
@@ -71,6 +127,7 @@ var displayItemTagsDefault = map[string]string{
 	"cdn":       "false",
 	"required":  "true",
 	"readonly":  "false",
+	"maker":     "",
 	"showfield": "ID",
 	"index":     "ID",
 	"model":     "",
@@ -242,6 +299,7 @@ func CopyDisplayItems(src *[]DisplayItem) *[]DisplayItem {
 		newItem.Required = srcItem.Required
 		newItem.Readonly = srcItem.Readonly
 		newItem.ShowField = srcItem.ShowField
+		newItem.Maker = srcItem.Maker
 		newItem.Index = srcItem.Index
 		newItem.Model = srcItem.Model
 		newItem.Meta = srcItem.Meta

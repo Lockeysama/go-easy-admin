@@ -7,8 +7,18 @@
 // @LicenseUrl http://www.apache.org/licenses/LICENSE-2.0.html
 package routers
 
-import beegoadapt "github.com/lockeysama/go-easy-admin/beego_adapt"
+import (
+	beego "github.com/beego/beego/v2/server/web"
+
+	beegoadapt "github.com/lockeysama/go-easy-admin/beego_adapt"
+	applicationcontroller "github.com/lockeysama/go-easy-admin/examples/beego/controllers/application"
+)
 
 func init() {
 	beegoadapt.InjectRouters()
+
+	beego.AddNamespace(beego.NewNamespace("/application",
+		beegoadapt.AutoRegistryRouter(&applicationcontroller.ApplicationController{}),
+		beegoadapt.AutoRegistryRouter(&applicationcontroller.IoTController{}),
+	))
 }
