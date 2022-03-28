@@ -116,10 +116,22 @@ func (c *GEAdminBaseController) parser(displayItems *[]DisplayItem) map[string]i
 					params[item.Field] = value[0]
 				}
 			}
-		case DisplayType.Number, DisplayType.ForeignKey, DisplayType.O2O:
+		case DisplayType.Number:
 			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
 				if i, err := strconv.Atoi(value[0]); err == nil {
 					params[item.Field] = i
+				} else {
+					if (value[0] == "<nil>" || value[0] == "") && item.PK != "true" {
+						params[item.Field] = nil
+					}
+				}
+			}
+		case DisplayType.ForeignKey, DisplayType.O2O:
+			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
+				if i, err := strconv.Atoi(value[0]); err == nil {
+					v := reflect.New(reflect.TypeOf(item.Model))
+					v.FieldByName(item.Index).SetInt(int64(i))
+					params[item.Field] = v.Interface()
 				} else {
 					if (value[0] == "<nil>" || value[0] == "") && item.PK != "true" {
 						params[item.Field] = nil

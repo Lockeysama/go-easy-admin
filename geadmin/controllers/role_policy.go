@@ -54,7 +54,7 @@ func (c *GEAdminBaseController) AdminIcon() string {
 // AdminPathMethods 控制器 Admin 部分的请求函数（授权）
 func (c *GEAdminBaseController) AdminPathMethods() []string {
 	return []string{
-		"list", "add", "update", "delete", "table", "edit",
+		"list", "detail", "add", "update", "delete", "table", "edit",
 		"ajaxadd", "ajaxupdate", "ajaxdelete",
 		"ajaxupload", "ajaxdownload",
 	}

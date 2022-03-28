@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,6 +29,11 @@ func DefaultValueMake(value interface{}, item *DisplayItem) interface{} {
 		return value
 	}
 	if hook, ok := defaultValueMakers[item.Maker]; ok {
+		t := reflect.TypeOf(value)
+		isPtr := false
+		if t.Kind() == reflect.Ptr {
+			isPtr = true
+		}
 		make := false
 		switch item.DBType {
 		case DisplayType.ForeignKey, DisplayType.O2O:
@@ -40,20 +46,22 @@ func DefaultValueMake(value interface{}, item *DisplayItem) interface{} {
 			}
 
 		case DisplayType.Text, DisplayType.Char:
-			if value == "" {
+			if (isPtr && *value.(*string) == "") || value == "" {
 				make = true
 			}
 		case DisplayType.Bool:
-			if value == false {
+			if (isPtr && *value.(*bool) == false) || value == false {
 				make = true
 			}
 		case DisplayType.Number:
-			if value == 0 {
+			v, _ := strconv.Atoi(fmt.Sprintf("%d", value))
+			if (isPtr && v == 0) || value == 0 {
 				make = true
 			}
 
 		case DisplayType.Datetime, DisplayType.Date, DisplayType.Time:
-			if value == 0 {
+			v, _ := strconv.Atoi(fmt.Sprintf("%d", value))
+			if (isPtr && v == 0) || value == 0 {
 				make = true
 			}
 		}
@@ -357,32 +365,11 @@ func Struct2MapWithHTML(obj *map[string]interface{}, display *[]DisplayItem) map
 			if item.Value == nil {
 				continue
 			}
-			s := reflect.ValueOf(item.Value).Elem()
 			tpl := "<a name=\"%s\" id=\"%s\" index=\"%v\" class=\"layui-btn layui-btn-xs layui-btn-normal layui-btn-radius\" lay-event=\"detail\">%v</a>"
-			values := ""
-			switch s.FieldByName(item.ShowField).Kind() {
-			case reflect.Int, reflect.Int64:
-				value := s.FieldByName(item.ShowField).Int()
-				switch s.FieldByName(item.Index).Kind() {
-				case reflect.Int, reflect.Int64:
-					index := s.FieldByName(item.Index).Int()
-					values += fmt.Sprintf(tpl, item.Field, item.Index, index, value)
-				case reflect.String:
-					index := s.FieldByName(item.Index).String()
-					values += fmt.Sprintf(tpl, item.Field, item.Index, index, value)
-				}
-			case reflect.String:
-				value := s.FieldByName(item.ShowField).String()
-				switch s.FieldByName(item.Index).Kind() {
-				case reflect.Int, reflect.Int64:
-					index := s.FieldByName(item.Index).Int()
-					values += fmt.Sprintf(tpl, item.Field, item.Index, index, value)
-				case reflect.String:
-					index := s.FieldByName(item.Index).String()
-					values += fmt.Sprintf(tpl, item.Field, item.Index, index, value)
-				}
-			}
-
+			value := item.Value.(map[string]interface{})[item.ShowField]
+			values := fmt.Sprintf(
+				tpl, item.Field, item.Index, value, value,
+			)
 			data[item.Field] = values
 		case DisplayType.M2M:
 			if item.Value == nil {

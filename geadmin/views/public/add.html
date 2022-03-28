@@ -194,7 +194,7 @@
             
             {{end}}
             console.log(form_data);
-            $.post('{{.prefix}}/{{.path}}/ajax_add_new', form_data, function (out) {
+            $.post('{{.prefix}}/{{.path}}/ajaxadd', form_data, function (out) {
                 if (out.status == 0) {
                     layer.msg("操作成功",{icon: 1, time: 1500},function () {
                         console.log("success");
