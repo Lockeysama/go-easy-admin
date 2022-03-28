@@ -102,6 +102,20 @@ func (c *GEAdminBaseController) AjaxUpdate() {
 				m2m[item.Field] = values.([]interface{})
 				delete(params, item.Field)
 			}
+		case DisplayType.ForeignKey, DisplayType.O2O:
+			mapValue := make(map[string]interface{})
+			if value, ok := params[item.Field]; ok {
+				if b, err := json.Marshal(value); err != nil {
+					c.AjaxMsg(err.Error(), MSG_ERR)
+					return
+				} else {
+					if err := json.Unmarshal(b, &mapValue); err != nil {
+						c.AjaxMsg(err.Error(), MSG_ERR)
+						return
+					}
+				}
+				params[item.Field] = mapValue[item.Index]
+			}
 		}
 	}
 
