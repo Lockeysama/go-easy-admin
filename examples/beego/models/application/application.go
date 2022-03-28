@@ -16,12 +16,13 @@ func init() {
 // User 用户
 type Application struct {
 	basemodels.NormalModel
-	Name   string `orm:"size(32);description(名称)"`
-	NameEN string `orm:"size(32);description(英文名称)"`
-	Desc   string `orm:"size(256);description(描述)"`
-	Status int8   `orm:"description(应用状态> 0: 已停止 | 1: 开发中 | 2: 已上线)"`
-	AppKey string `orm:"size(36)" gea:"maker=AppKeyMaker"`
-	Secret string `orm:"size(32)"`
+	Name      string      `orm:"size(32);description(名称)"`
+	NameEN    string      `orm:"size(32);description(英文名称)"`
+	Platforms []*Platform `orm:"null;rel(m2m)" gea:"showfield=Name"`
+	Desc      string      `orm:"size(256);description(描述)"`
+	Status    int8        `orm:"description(应用状态> 0: 已停止 | 1: 开发中 | 2: 已上线)"`
+	AppKey    string      `orm:"size(36)" gea:"maker=AppKeyMaker"`
+	Secret    string      `orm:"size(32)"`
 }
 
 func AppKeyMaker() interface{} {

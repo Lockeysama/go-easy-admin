@@ -195,11 +195,11 @@ func (c *GEAdminBaseController) List() {
 // Table 获取管理后台列表数据
 func (c *GEAdminBaseController) Table() {
 	// 列表
-	page, err := strconv.Atoi(c.RequestParam("page"))
+	page, err := strconv.Atoi(c.RequestQuery("page"))
 	if err != nil {
 		page = 1
 	}
-	limit, err := strconv.Atoi(c.RequestParam("limit"))
+	limit, err := strconv.Atoi(c.RequestQuery("limit"))
 	if err != nil {
 		limit = 30
 	}
@@ -343,6 +343,7 @@ func (c *GEAdminBaseController) Edit() {
 				itemValuesMap := []map[string]interface{}{}
 				switch v.FieldByName(item.Field).Type().Kind() {
 				case reflect.Slice:
+					c.GEADataM2MUpdate(r, item.Field, nil, "LOAD")
 					itemValues := v.FieldByName(item.Field)
 					for _i := 0; _i < itemValues.Len(); _i++ {
 						itemValuesMap = append(itemValuesMap, Struct2Map(itemValues.Index(_i).Elem().Interface()))
@@ -394,7 +395,7 @@ func (c *GEAdminBaseController) Detail() {
 	for _, item := range *gp {
 		field := c.RequestQuery("field")
 		if item.Field == field {
-			index, _ := strconv.Atoi(c.RequestParam(item.Index))
+			index, _ := strconv.Atoi(c.RequestQuery(item.Index))
 			filters := map[string]interface{}{item.Index: index}
 			r := c.GEADataBaseQueryRow(item.Model, filters, false)
 			if detailDisplayItems = c.DisplayItems(r.(geamodels.Model)); len(*detailDisplayItems) < 1 {

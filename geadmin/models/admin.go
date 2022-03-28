@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+
+	"github.com/lockeysama/go-easy-admin/geadmin/utils"
 )
 
 // Salt 盐
@@ -47,11 +49,12 @@ type GEAdmin interface {
 
 // CreateAdministrator 创建超管
 func CreateAdministrator() {
-	password := generatePasswd()
+	rootUser := utils.GetenvFromConfig("gea.admin", DefaultGEAdminUsername).(string)
+	password := utils.GetenvFromConfig("gea.admin_pwd", generatePasswd()).(string)
 	hash := md5.New()
 	hash.Write([]byte(password + Salt))
 	passwordSaltMD5 := fmt.Sprintf("%x", hash.Sum(nil))
-	a := GetGEAdminAdapter().NewGEAdmin(DefaultGEAdminUsername, passwordSaltMD5)
+	a := GetGEAdminAdapter().NewGEAdmin(rootUser, passwordSaltMD5)
 	if isCreate, _, err := GetGEAdminAdapter().ReadOrCreate(a, "UserName"); err != nil {
 		panic("error")
 	} else {

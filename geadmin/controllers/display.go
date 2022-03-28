@@ -375,32 +375,46 @@ func Struct2MapWithHTML(obj *map[string]interface{}, display *[]DisplayItem) map
 			if item.Value == nil {
 				continue
 			}
-			s := reflect.ValueOf(item.Value)
+			// s := reflect.ValueOf(item.Value)
+			// tpl := "<a name=\"%s\" id=\"%s\" index=\"%v\" class=\"layui-btn layui-btn-xs layui-btn-normal layui-btn-radius\" lay-event=\"detail\">%v</a>"
+			// values := ""
+			// for _i := 0; _i < s.Len(); _i++ {
+			// 	switch s.Index(_i).Elem().FieldByName(item.ShowField).Kind() {
+			// 	case reflect.Int, reflect.Int64:
+			// 		value := s.Index(_i).Elem().FieldByName(item.ShowField).Int()
+			// 		switch s.Index(_i).Elem().FieldByName(item.Index).Kind() {
+			// 		case reflect.Int, reflect.Int64:
+			// 			index := s.Index(_i).Elem().FieldByName(item.Index).Int()
+			// 			values += fmt.Sprintf(tpl, item.Field, item.Index, index, value)
+			// 		case reflect.String:
+			// 			index := s.Index(_i).Elem().FieldByName(item.Index).String()
+			// 			values += fmt.Sprintf(tpl, item.Field, item.Index, index, value)
+			// 		}
+			// 	case reflect.String:
+			// 		value := s.Index(_i).Elem().FieldByName(item.ShowField).String()
+			// 		switch s.Index(_i).Elem().FieldByName(item.Index).Kind() {
+			// 		case reflect.Int, reflect.Int64:
+			// 			index := s.Index(_i).Elem().FieldByName(item.Index).Int()
+			// 			values += fmt.Sprintf(tpl, item.Field, item.Index, index, value)
+			// 		case reflect.String:
+			// 			index := s.Index(_i).Elem().FieldByName(item.Index).String()
+			// 			values += fmt.Sprintf(tpl, item.Field, item.Index, index, value)
+			// 		}
+			// 	}
+			// }
+
+			// data[item.Field] = values
 			tpl := "<a name=\"%s\" id=\"%s\" index=\"%v\" class=\"layui-btn layui-btn-xs layui-btn-normal layui-btn-radius\" lay-event=\"detail\">%v</a>"
+			value := item.Value.([]interface{})
 			values := ""
-			for _i := 0; _i < s.Len(); _i++ {
-				switch s.Index(_i).Elem().FieldByName(item.ShowField).Kind() {
-				case reflect.Int, reflect.Int64:
-					value := s.Index(_i).Elem().FieldByName(item.ShowField).Int()
-					switch s.Index(_i).Elem().FieldByName(item.Index).Kind() {
-					case reflect.Int, reflect.Int64:
-						index := s.Index(_i).Elem().FieldByName(item.Index).Int()
-						values += fmt.Sprintf(tpl, item.Field, item.Index, index, value)
-					case reflect.String:
-						index := s.Index(_i).Elem().FieldByName(item.Index).String()
-						values += fmt.Sprintf(tpl, item.Field, item.Index, index, value)
-					}
-				case reflect.String:
-					value := s.Index(_i).Elem().FieldByName(item.ShowField).String()
-					switch s.Index(_i).Elem().FieldByName(item.Index).Kind() {
-					case reflect.Int, reflect.Int64:
-						index := s.Index(_i).Elem().FieldByName(item.Index).Int()
-						values += fmt.Sprintf(tpl, item.Field, item.Index, index, value)
-					case reflect.String:
-						index := s.Index(_i).Elem().FieldByName(item.Index).String()
-						values += fmt.Sprintf(tpl, item.Field, item.Index, index, value)
-					}
-				}
+			for _, _value := range value {
+				values += fmt.Sprintf(
+					tpl,
+					item.Field,
+					item.Index,
+					_value.(map[string]interface{})[item.Index],
+					_value.(map[string]interface{})[item.ShowField],
+				)
 			}
 
 			data[item.Field] = values

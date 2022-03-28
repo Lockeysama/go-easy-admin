@@ -12,6 +12,7 @@ import (
 
 	beegoadapt "github.com/lockeysama/go-easy-admin/beego_adapt"
 
+	_ "github.com/lockeysama/go-easy-admin/examples/beego/models/account"
 	_ "github.com/lockeysama/go-easy-admin/examples/beego/models/application"
 )
 

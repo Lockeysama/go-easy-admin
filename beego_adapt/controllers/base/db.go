@@ -60,7 +60,12 @@ func (c *AdaptController) GEADataBaseQueryList(
 			switch item.DBType {
 			case geacontrollers.DisplayType.M2M:
 				for i := 0; i < vLists.Len(); i++ {
-					vLists.Index(i).Interface().(geamodels.M2MModel).LoadM2M()
+					c.GEADataM2MUpdate(
+						vLists.Index(i).Interface().(geamodels.Model),
+						item.Field,
+						nil,
+						"LOAD",
+					)
 				}
 			case geacontrollers.DisplayType.O2O, geacontrollers.DisplayType.ForeignKey:
 				if _, ok := fksList[item.Model]; !ok {
@@ -163,4 +168,30 @@ func (c *AdaptController) GEADataBaseDelete(
 	}
 	ID, err := qs.Delete()
 	return ID, err
+}
+
+func (c *AdaptController) GEADataM2MUpdate(
+	model geamodels.Model, fieldName string, values []interface{}, action string,
+) error {
+
+	switch action {
+	case "ADD":
+		m2m := orm.NewOrm().QueryM2M(model, fieldName)
+		for _, value := range values {
+			if _, err := m2m.Add(value); err != nil {
+				return err
+			}
+		}
+	case "LOAD":
+		orm.NewOrm().LoadRelated(model, fieldName)
+	case "UPDATE":
+		orm.NewOrm().QueryM2M(model, fieldName).Clear()
+		m2m := orm.NewOrm().QueryM2M(model, fieldName)
+		for _, value := range values {
+			if _, err := m2m.Add(value); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

@@ -74,6 +74,12 @@ func (c *GEAdminBaseController) AjaxAdd() {
 		c.AjaxMsg(err.Error(), MSG_ERR)
 		return
 	}
+	for _, item := range *items {
+		switch item.DBType {
+		case "M2M":
+			c.GEADataM2MUpdate(r, item.Field, params[item.Field].([]interface{}), "ADD")
+		}
+	}
 
 	c.AjaxMsg("成功", MSG_OK)
 }
@@ -88,6 +94,17 @@ func (c *GEAdminBaseController) AjaxUpdate() {
 	}
 	c.makeListPK(items)
 
+	m2m := map[string][]interface{}{}
+	for _, item := range *items {
+		switch item.DBType {
+		case DisplayType.M2M:
+			if values, ok := params[item.Field]; ok {
+				m2m[item.Field] = values.([]interface{})
+				delete(params, item.Field)
+			}
+		}
+	}
+
 	if pk, ok := params[c.GetData()["pkField"].(string)]; ok && pk != nil {
 		r := reflect.New(reflect.TypeOf(c.Model).Elem()).Interface()
 		if _, err := c.GEADataBaseUpdate(
@@ -97,6 +114,16 @@ func (c *GEAdminBaseController) AjaxUpdate() {
 		); err != nil {
 			c.AjaxMsg(err.Error(), MSG_ERR)
 			return
+		}
+		if len(m2m) > 0 {
+			row := c.GEADataBaseQueryRow(
+				r,
+				map[string]interface{}{c.GetData()["pkField"].(string): pk},
+				false,
+			)
+			for name, values := range m2m {
+				c.GEADataM2MUpdate(row.(geamodels.Model), name, values, "UPDATE")
+			}
 		}
 	}
 
@@ -129,7 +156,7 @@ func (c *GEAdminBaseController) parser(displayItems *[]DisplayItem) map[string]i
 		case DisplayType.ForeignKey, DisplayType.O2O:
 			if value, ok := c.RequestForm()[item.Field]; ok && len(value) > 0 {
 				if i, err := strconv.Atoi(value[0]); err == nil {
-					v := reflect.New(reflect.TypeOf(item.Model))
+					v := reflect.New(reflect.TypeOf(item.Model).Elem()).Elem()
 					v.FieldByName(item.Index).SetInt(int64(i))
 					params[item.Field] = v.Interface()
 				} else {
@@ -150,12 +177,16 @@ func (c *GEAdminBaseController) parser(displayItems *[]DisplayItem) map[string]i
 						case DisplayType.Number:
 							for _, v := range value {
 								if i, err := strconv.Atoi(v); err == nil {
-									m2m = append(m2m, i)
+									v := reflect.New(reflect.TypeOf(item.Model).Elem()).Elem()
+									v.FieldByName(item.Index).SetInt(int64(i))
+									m2m = append(m2m, v.Interface())
 								}
 							}
 						default:
-							for _, v := range value {
-								m2m = append(m2m, v)
+							for _, _value := range value {
+								v := reflect.New(reflect.TypeOf(item.Model).Elem()).Elem()
+								v.FieldByName(item.Index).Set(reflect.ValueOf(_value))
+								m2m = append(m2m, v.Interface())
 							}
 						}
 						break m2mDisplayItemsLoop

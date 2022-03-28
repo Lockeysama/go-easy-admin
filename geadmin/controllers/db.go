@@ -18,4 +18,5 @@ type GEADataBase interface {
 	GEADataBaseInsert(model geamodels.Model) (int64, error)
 	GEADataBaseUpdate(model geamodels.Model, filters map[string]interface{}, params map[string]interface{}) (int64, error)
 	GEADataBaseDelete(model geamodels.Model, filters map[string]interface{}) (int64, error)
+	GEADataM2MUpdate(model geamodels.Model, fieldName string, values []interface{}, action string) error
 }
