@@ -1,9 +1,7 @@
 # 任务计划
 
-## TODO 订阅
+## TODO
 
-## TODO 通知
-
-## TODO detail.tpl 详情图片(CDN)
-
-## TODO 登录验证
+- 时间 时区
+  - GO 代码 time.RFC3999
+  - JS 时间 new Date(data.field["CreatedAt"]).toUTCString()

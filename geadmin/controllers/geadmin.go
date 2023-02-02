@@ -502,6 +502,7 @@ func (c *GEAdminBaseController) auth() {
 						return
 					} else {
 						user.SetRoles(roles)
+						// TODO 角色缓存
 						cache.MemCache().Set(
 							"uid"+strconv.Itoa(userID),
 							user,
