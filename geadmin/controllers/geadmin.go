@@ -68,12 +68,14 @@ func (c *GEAdminBaseController) Prepare() {
 
 	c.SetData("prefix", prefix)
 
-	c.auth()
-	if c.User != nil {
-		c.SetData(
-			"loginUserName",
-			fmt.Sprintf("%s(%s)", c.User.GetRealName(), c.User.GetUserName()),
-		)
+	if c.AccessType() != AccessTypeNoAuth {
+		c.auth()
+		if c.User != nil {
+			c.SetData(
+				"loginUserName",
+				fmt.Sprintf("%s(%s)", c.User.GetRealName(), c.User.GetUserName()),
+			)
+		}
 	}
 }
 
@@ -470,121 +472,124 @@ func (c *GEAdminBaseController) Detail() {
 
 // auth 登录权限验证
 func (c *GEAdminBaseController) auth() {
-	arr := strings.Split(c.GetCookie("auth"), "|")
-	if len(arr) == 2 {
-		idStr, password := arr[0], arr[1]
-		userID, _ := strconv.Atoi(idStr)
-		if userID > 0 {
-			var (
-				user geamodels.GEAdmin
-				err  error
-			)
+	if c.AccessType() == AccessTypeCookie {
+		arr := strings.Split(c.GetCookie("auth"), "|")
+		if len(arr) == 2 {
+			idStr, password := arr[0], arr[1]
+			userID, _ := strconv.Atoi(idStr)
+			if userID > 0 {
+				var (
+					user geamodels.GEAdmin
+					err  error
+				)
 
-			cacheUser := cache.MemCache().Get("uid" + strconv.Itoa(userID))
-			if cacheUser != nil { //从缓存取用户
-				user = cacheUser.(geamodels.GEAdmin)
-			} else {
-				user = geamodels.GetGEAdminAdapter().QueryWithID(int64(userID))
-				if user == nil {
-					c.AjaxMsg("用户不存在", MSG_ERR)
-					return
-				}
-
-				if adminRoles := geamodels.GetGEAdminRoleAdapter().
-					QueryWithID(user.GetID()); adminRoles == nil {
-					c.AjaxMsg("查询异常: "+err.Error(), MSG_ERR)
-					return
+				cacheUser := cache.MemCache().Get("uid" + strconv.Itoa(userID))
+				if cacheUser != nil { //从缓存取用户
+					user = cacheUser.(geamodels.GEAdmin)
 				} else {
-					rolesID := []int64{}
-					for _, adminRole := range adminRoles {
-						rolesID = append(rolesID, adminRole.GetGEARoleID())
+					user = geamodels.GetGEAdminAdapter().QueryWithID(int64(userID))
+					if user == nil {
+						c.AjaxMsg("用户不存在", MSG_ERR)
+						return
 					}
 
-					if roles, err := geamodels.GetGEARoleAdapter().
-						QueryRoleWithID(rolesID...); err != nil {
+					if adminRoles := geamodels.GetGEAdminRoleAdapter().
+						QueryWithID(user.GetID()); adminRoles == nil {
 						c.AjaxMsg("查询异常: "+err.Error(), MSG_ERR)
 						return
 					} else {
-						user.SetRoles(roles)
-						// TODO 角色缓存
-						cache.MemCache().Set(
-							"uid"+strconv.Itoa(userID),
-							user,
-						)
+						rolesID := []int64{}
+						for _, adminRole := range adminRoles {
+							rolesID = append(rolesID, adminRole.GetGEARoleID())
+						}
+
+						if roles, err := geamodels.GetGEARoleAdapter().
+							QueryRoleWithID(rolesID...); err != nil {
+							c.AjaxMsg("查询异常: "+err.Error(), MSG_ERR)
+							return
+						} else {
+							user.SetRoles(roles)
+							// TODO 角色缓存
+							cache.MemCache().Set(
+								"uid"+strconv.Itoa(userID),
+								user,
+							)
+						}
 					}
 				}
-			}
-			hash := md5.New()
-			hash.Write([]byte(user.GetPassword() + geamodels.Salt))
-			if err == nil && password == fmt.Sprintf("%x", hash.Sum(nil)) {
-				c.User = user
-				c.SideTreeAuth()
-			}
+				hash := md5.New()
+				hash.Write([]byte(user.GetPassword() + geamodels.Salt))
+				if err == nil && password == fmt.Sprintf("%x", hash.Sum(nil)) {
+					c.User = user
+					c.SideTreeAuth()
+				}
 
-			//不需要权限检查
-			isNoAuth := strings.Contains(NoAuth, c.ActionName())
+				//不需要权限检查
+				isNoAuth := strings.Contains(NoAuth, c.ActionName())
 
-			roles := []interface{}{}
-			for _, r := range user.GetRoles() {
-				roles = append(roles, r.GetName())
-			}
-			isHasAuth := false
-			prefix := "/"
-			if c.GEARolePolicy != nil {
-				prefix = c.GEARolePolicy.Prefix()
-			}
+				roles := []interface{}{}
+				for _, r := range user.GetRoles() {
+					roles = append(roles, r.GetName())
+				}
+				isHasAuth := false
+				prefix := "/"
+				if c.GEARolePolicy != nil {
+					prefix = c.GEARolePolicy.Prefix()
+				}
 
-			cr := c.GEADataBaseQueryList(
-				&geamodels.CasbinRule{},
-				1,
-				200,
-				map[string]interface{}{
-					"V0__in": roles,
-					"V1__contains": fmt.Sprintf(
-						"%s/%s/%s", prefix, c.ControllerName(), c.ActionName(),
-					),
-				},
-				nil,
-				false,
-			).(*[]*geamodels.CasbinRule)
+				cr := c.GEADataBaseQueryList(
+					&geamodels.CasbinRule{},
+					1,
+					200,
+					map[string]interface{}{
+						"V0__in": roles,
+						"V1__contains": fmt.Sprintf(
+							"%s/%s/%s", prefix, c.ControllerName(), c.ActionName(),
+						),
+					},
+					nil,
+					false,
+				).(*[]*geamodels.CasbinRule)
 
-			if len(*cr) > 0 {
-				isHasAuth = true
-			}
+				if len(*cr) > 0 {
+					isHasAuth = true
+				}
 
-			if !isHasAuth && !isNoAuth {
-				c.AjaxMsg("没有权限", MSG_ERR)
-				return
-			}
-		}
-	}
-
-	token := strings.Split(c.RequestHeaderQuery("Authorization"), " ")
-	if len(token) == 2 {
-		if APIAuthFunc != nil {
-			noAuth := false
-			for _, action := range c.NoAuthAction {
-				if strings.ToLower(action) == c.GetAction() {
-					noAuth = true
+				if !isHasAuth && !isNoAuth {
+					c.AjaxMsg("没有权限", MSG_ERR)
+					return
 				}
 			}
-			if !noAuth {
-				if err := APIAuthFunc(c); err != nil {
-					actions := []interface{}{"getall", "get", "put", "post", "delete"}
-					if utils.Contain(c.ActionName, &actions) {
-						c.RequestError(403, "method not allowed")
-					} else {
-						c.AjaxMsg(err.Error(), MSG_ERR)
+		}
+		if (c.User == nil || c.User.GetID() == 0) &&
+			(c.ControllerName() != "login" || c.ActionName() != "login") {
+			c.redirect("/login")
+		}
+	} else if c.AccessType() == AccessTypeJWT {
+		token := strings.Split(c.RequestHeaderQuery("Authorization"), " ")
+		if len(token) == 2 {
+			if APIAuthFunc != nil {
+				noAuth := false
+				for _, action := range c.NoAuthAction {
+					if strings.ToLower(action) == c.GetAction() {
+						noAuth = true
 					}
 				}
+				if !noAuth {
+					if err := APIAuthFunc(c); err != nil {
+						actions := []interface{}{"getall", "get", "put", "post", "delete"}
+						if utils.Contain(c.ActionName, &actions) {
+							c.RequestError(403, "method not allowed")
+						} else {
+							c.AjaxMsg(err.Error(), MSG_ERR)
+						}
+					}
+				}
+			} else {
+				panic("APIAuthFunc undefined")
 			}
-		} else {
-			panic("APIAuthFunc undefined")
 		}
-	}
-
-	if (c.User == nil || c.User.GetID() == 0) &&
-		(c.ControllerName() != "login" || c.ActionName() != "login") {
-		c.redirect("/login")
+	} else {
+		panic("access type undefined")
 	}
 }

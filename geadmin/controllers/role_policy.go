@@ -10,6 +10,7 @@ import (
 
 // GEARolePolicy CasbinRule
 type GEARolePolicy interface {
+	AccessType() string
 	DBModel() geamodels.Model
 	Prefix() string
 
@@ -19,6 +20,19 @@ type GEARolePolicy interface {
 	AdminNameAlias() string
 	AdminIcon() string
 	AdminPathMethods() []string
+}
+
+const (
+	// AccessTypeNoAuth 无需授权
+	AccessTypeNoAuth = "NoAuth"
+	// AccessTypeCookie Cookie 访问
+	AccessTypeCookie = "Cookie"
+	// AccessTypeJWT JWT 访问
+	AccessTypeJWT = "JWT"
+)
+
+func (c *GEAdminBaseController) AccessType() string {
+	return AccessTypeCookie
 }
 
 // Prefix 前缀
