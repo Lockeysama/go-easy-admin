@@ -20,6 +20,10 @@ func (c *AdaptController) Init(
 	c.Controller.Init(ctx, controllerName, actionName, app)
 }
 
+func (c *AdaptController) AccessType() string {
+	return c.GEAdminBaseController.AccessType()
+}
+
 func (c *AdaptController) Prepare() {
 	c.Controller.Prepare()
 	c.GEAdminBaseController.Prepare()
