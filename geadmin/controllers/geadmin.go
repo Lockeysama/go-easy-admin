@@ -69,7 +69,7 @@ func (c *GEAdminBaseController) Prepare() {
 
 	c.SetData("prefix", prefix)
 
-	if c.AccessType() != AccessTypeNoAuth {
+	if c.GEARolePolicy.AccessType() != AccessTypeNoAuth {
 		c.auth()
 		if c.User != nil {
 			c.SetData(
