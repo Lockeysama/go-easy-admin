@@ -69,6 +69,7 @@ func (c *GEAdminBaseController) Prepare() {
 
 	c.SetData("prefix", prefix)
 
+	// 调用子类的 AccessType
 	if c.GEARolePolicy.AccessType() != AccessTypeNoAuth {
 		c.auth()
 		if c.User != nil {
