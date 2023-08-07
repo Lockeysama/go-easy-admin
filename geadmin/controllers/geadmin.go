@@ -12,12 +12,16 @@ import (
 
 	geaconfig "github.com/lockeysama/go-easy-admin/geadmin/config"
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
+	"github.com/lockeysama/go-easy-admin/geadmin/utils"
 	cache "github.com/lockeysama/go-easy-admin/geadmin/utils/cache"
 )
 
 var AdminModel geamodels.GEAdmin
 
 var NoAuth = `login/logout/start/index`
+
+// APIAuthFunc API 权限校验函数
+var APIAuthFunc func(*GEAdminBaseController) error
 
 // ManageBaseController 控制器管理基类
 type GEAdminBaseController struct {
@@ -552,6 +556,30 @@ func (c *GEAdminBaseController) auth() {
 				c.AjaxMsg("没有权限", MSG_ERR)
 				return
 			}
+		}
+	}
+
+	token := strings.Split(c.RequestQuery("Authorization"), " ")
+	if len(token) == 2 {
+		if APIAuthFunc != nil {
+			noAuth := false
+			for _, action := range c.NoAuthAction {
+				if strings.ToLower(action) == c.GetAction() {
+					noAuth = true
+				}
+			}
+			if !noAuth {
+				if err := APIAuthFunc(c); err != nil {
+					actions := []interface{}{"getall", "get", "put", "post", "delete"}
+					if utils.Contain(c.ActionName, &actions) {
+						c.RequestError(403, err.Error())
+					} else {
+						c.AjaxMsg(err.Error(), MSG_ERR)
+					}
+				}
+			}
+		} else {
+			panic("APIAuthFunc undefined")
 		}
 	}
 
