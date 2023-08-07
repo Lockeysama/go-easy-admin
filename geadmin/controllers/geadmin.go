@@ -572,7 +572,7 @@ func (c *GEAdminBaseController) auth() {
 				if err := APIAuthFunc(c); err != nil {
 					actions := []interface{}{"getall", "get", "put", "post", "delete"}
 					if utils.Contain(c.ActionName, &actions) {
-						c.RequestError(403, err.Error())
+						c.RequestError(403, "method not allowed")
 					} else {
 						c.AjaxMsg(err.Error(), MSG_ERR)
 					}
