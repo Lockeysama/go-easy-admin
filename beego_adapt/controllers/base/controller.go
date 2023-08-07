@@ -21,7 +21,7 @@ func (c *AdaptController) Init(
 }
 
 func (c *AdaptController) AccessType() string {
-	return c.GEAdminBaseController.AccessType()
+	return c.AppController.(*AdaptController).GEAdminBaseController.AccessType()
 }
 
 func (c *AdaptController) Prepare() {
