@@ -12,6 +12,8 @@ type GEARequest interface {
 	RequestURL() *url.URL
 	RequestMethod() string
 
+	RequestHeaderQuery(string) string
+
 	RequestQuery(string) string
 	RequestParam(string) string
 	RequestBody() []byte

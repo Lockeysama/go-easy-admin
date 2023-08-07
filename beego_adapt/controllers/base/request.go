@@ -21,6 +21,10 @@ func (c *AdaptController) RequestMethod() string {
 	return c.Ctx.Request.Method
 }
 
+func (c *AdaptController) RequestHeaderQuery(key string) string {
+	return c.Ctx.Request.Header.Get(key)
+}
+
 func (c *AdaptController) RequestQuery(key string) string {
 	return c.Ctx.Input.Query(key)
 }
