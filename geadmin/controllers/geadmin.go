@@ -37,6 +37,7 @@ type GEAdminBaseController struct {
 	PageTitle    string
 }
 
+// Adapter 适配器
 func (c *GEAdminBaseController) Adapter(controller interface{}) {
 	c.GEAController = controller.(GEAController)
 	c.GEADataBase = controller.(GEADataBase)
