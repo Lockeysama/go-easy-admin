@@ -559,7 +559,7 @@ func (c *GEAdminBaseController) auth() {
 		}
 	}
 
-	token := strings.Split(c.RequestQuery("Authorization"), " ")
+	token := strings.Split(c.RequestHeaderQuery("Authorization"), " ")
 	if len(token) == 2 {
 		if APIAuthFunc != nil {
 			noAuth := false
