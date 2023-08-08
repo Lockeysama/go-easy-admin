@@ -16,22 +16,22 @@ type RESTful interface {
 	Delete(*gin.Context)
 }
 
-type IAdaptController interface {
+type IAdaptAdminController interface {
 	Init(*context.Context, string, string, interface{})
 	geacontrollers.GEAController
 	geacontrollers.GEADataBase
 	RESTful
 }
 
-type AdaptController struct {
+type AdaptAdminController struct {
 	Data    map[interface{}]interface{}
 	TplName string
 	Ctx     *gin.Context
-	IAdaptController
+	IAdaptAdminController
 	geacontrollers.GEAdminBaseController
 }
 
-func RegisterRouter(c IAdaptController, engine ...*gin.Engine) {
+func RegisterRouter(c IAdaptAdminController, engine ...*gin.Engine) {
 	var _engine *gin.Engine
 	if engine == nil {
 		_engine = gin.Default()
@@ -44,66 +44,66 @@ func RegisterRouter(c IAdaptController, engine ...*gin.Engine) {
 	group.DELETE(c.ControllerName(), c.Get)
 }
 
-func (c *AdaptController) Init(
+func (c *AdaptAdminController) Init(
 	ctx *context.Context, controllerName string, actionName string, app interface{},
 ) {
 	c.Adapter(app)
 }
 
-func (c *AdaptController) Prepare() {
+func (c *AdaptAdminController) Prepare() {
 	c.GEAdminBaseController.Prepare()
 }
 
-func (c *AdaptController) Redirect(url string, code int) {
+func (c *AdaptAdminController) Redirect(url string, code int) {
 	// http.Redirect(c.Writer, req, rURL, code)
 }
 
-func (c *AdaptController) SetLayout(layout string) {
+func (c *AdaptAdminController) SetLayout(layout string) {
 	// c.Layout = layout
 }
 
-func (c *AdaptController) SetTplName(tplName string) {
+func (c *AdaptAdminController) SetTplName(tplName string) {
 	// c.TplName = tplName
 }
 
-func (c *AdaptController) GetController() string {
+func (c *AdaptAdminController) GetController() string {
 	// controller, _ := c.GetControllerAndAction()
 	// return controller
 	return ""
 }
 
-func (c *AdaptController) ControllerName() string {
+func (c *AdaptAdminController) ControllerName() string {
 	ctrl := c.GetController()
 	return strings.ToLower(ctrl[0 : len(ctrl)-10])
 }
 
-func (c *AdaptController) GetAction() string {
+func (c *AdaptAdminController) GetAction() string {
 	// _, action := c.GetControllerAndAction()
 	// return action
 	return ""
 }
 
-func (c *AdaptController) ActionName() string {
+func (c *AdaptAdminController) ActionName() string {
 	return strings.ToLower(c.GetAction())
 }
 
-func (c *AdaptController) SetData(dataType interface{}, data interface{}) {
+func (c *AdaptAdminController) SetData(dataType interface{}, data interface{}) {
 	// c.Data[dataType] = data
 }
 
-func (c *AdaptController) GetData() map[interface{}]interface{} {
+func (c *AdaptAdminController) GetData() map[interface{}]interface{} {
 	// return c.Data
 	return nil
 }
 
-func (c *AdaptController) ServeJSON(encoding ...bool) {
+func (c *AdaptAdminController) ServeJSON(encoding ...bool) {
 	c.ServeJSON(encoding...)
 }
 
-func (c *AdaptController) CustomAbort(status int, body string) {
+func (c *AdaptAdminController) CustomAbort(status int, body string) {
 	c.CustomAbort(status, body)
 }
 
-func (c *AdaptController) StopRun() {
+func (c *AdaptAdminController) StopRun() {
 	c.StopRun()
 }

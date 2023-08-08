@@ -9,7 +9,7 @@ import (
 	geamodels "github.com/lockeysama/go-easy-admin/geadmin/models"
 )
 
-func (c *AdaptController) GEADataBaseCount(
+func (c *AdaptAdminController) GEADataBaseCount(
 	model geamodels.Model, filters map[string]interface{},
 ) (int64, error) {
 	o := orm.NewOrm()
@@ -21,7 +21,7 @@ func (c *AdaptController) GEADataBaseCount(
 	return qs.Count()
 }
 
-func (c *AdaptController) GEADataBaseQueryList(
+func (c *AdaptAdminController) GEADataBaseQueryList(
 	model geamodels.Model,
 	page int, limit int,
 	filters map[string]interface{},
@@ -94,7 +94,7 @@ func (c *AdaptController) GEADataBaseQueryList(
 	return lists
 }
 
-func (c *AdaptController) GEADataBaseQueryRow(
+func (c *AdaptAdminController) GEADataBaseQueryRow(
 	model geamodels.Model, filters map[string]interface{}, loadRel bool,
 ) interface{} {
 	row := reflect.New(reflect.TypeOf(model).Elem()).Interface()
@@ -141,12 +141,12 @@ func (c *AdaptController) GEADataBaseQueryRow(
 }
 
 // TODO M2M O2O FK 处理
-func (c *AdaptController) GEADataBaseInsert(model geamodels.Model) (int64, error) {
+func (c *AdaptAdminController) GEADataBaseInsert(model geamodels.Model) (int64, error) {
 	ID, err := orm.NewOrm().Insert(model)
 	return ID, err
 }
 
-func (c *AdaptController) GEADataBaseUpdate(
+func (c *AdaptAdminController) GEADataBaseUpdate(
 	model geamodels.Model,
 	filters map[string]interface{},
 	params map[string]interface{},
@@ -159,7 +159,7 @@ func (c *AdaptController) GEADataBaseUpdate(
 	return ID, err
 }
 
-func (c *AdaptController) GEADataBaseDelete(
+func (c *AdaptAdminController) GEADataBaseDelete(
 	model geamodels.Model, filters map[string]interface{},
 ) (int64, error) {
 	qs := orm.NewOrm().QueryTable(model)
@@ -170,7 +170,7 @@ func (c *AdaptController) GEADataBaseDelete(
 	return ID, err
 }
 
-func (c *AdaptController) GEADataM2MUpdate(
+func (c *AdaptAdminController) GEADataM2MUpdate(
 	model geamodels.Model, fieldName string, values []interface{}, action string,
 ) error {
 

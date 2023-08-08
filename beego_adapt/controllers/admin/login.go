@@ -17,7 +17,7 @@ import (
 
 // LoginController
 type LoginController struct {
-	basecontrollers.AdaptController
+	basecontrollers.AdaptAdminController
 }
 
 // Login 登录

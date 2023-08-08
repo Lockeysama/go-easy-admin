@@ -6,17 +6,17 @@ import (
 
 // AdminController
 type AdminController struct {
-	basecontrollers.AdaptController
+	basecontrollers.AdaptAdminController
 }
 
 // Index 主页
 func (c *AdminController) Index() {
-	c.AdaptController.Data["pageTitle"] = "系统首页"
-	c.AdaptController.TplName = "admin/main.html"
+	c.AdaptAdminController.Data["pageTitle"] = "系统首页"
+	c.AdaptAdminController.TplName = "admin/main.html"
 }
 
 // Start 控制面板
 func (c *AdminController) Start() {
-	c.AdaptController.Data["pageTitle"] = "控制面板"
-	c.AdaptController.GEAdminBaseController.Display()
+	c.AdaptAdminController.Data["pageTitle"] = "控制面板"
+	c.AdaptAdminController.GEAdminBaseController.Display()
 }

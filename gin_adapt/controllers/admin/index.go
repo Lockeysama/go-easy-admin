@@ -8,12 +8,12 @@ import (
 
 // IndexController 文档页面
 type IndexController struct {
-	basecontrollers.AdaptController
+	basecontrollers.AdaptAdminController
 }
 
 // Index 文档主页
 func (c *IndexController) Index() {
-	c.AdaptController.Data["pageTitle"] = "首页"
-	c.AdaptController.Data["ts"] = time.Now()
-	c.AdaptController.TplName = "index.html"
+	c.AdaptAdminController.Data["pageTitle"] = "首页"
+	c.AdaptAdminController.Data["ts"] = time.Now()
+	c.AdaptAdminController.TplName = "index.html"
 }

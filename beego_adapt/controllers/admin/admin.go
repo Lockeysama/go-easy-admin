@@ -6,7 +6,7 @@ import (
 
 // AdminController
 type AdminController struct {
-	basecontrollers.AdaptController
+	basecontrollers.AdaptAdminController
 }
 
 // Index 主页

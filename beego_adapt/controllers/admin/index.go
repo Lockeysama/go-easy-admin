@@ -8,7 +8,7 @@ import (
 
 // IndexController 文档页面
 type IndexController struct {
-	basecontrollers.AdaptController
+	basecontrollers.AdaptAdminController
 }
 
 // Index 文档主页

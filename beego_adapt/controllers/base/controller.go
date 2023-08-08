@@ -8,74 +8,82 @@ import (
 	geacontrollers "github.com/lockeysama/go-easy-admin/geadmin/controllers"
 )
 
-type AdaptController struct {
+type AdaptAdminController struct {
 	beego.Controller
 	geacontrollers.GEAdminBaseController
 }
 
-func (c *AdaptController) Init(
+func (c *AdaptAdminController) Init(
 	ctx *context.Context, controllerName string, actionName string, app interface{},
 ) {
 	c.Adapter(app)
 	c.Controller.Init(ctx, controllerName, actionName, app)
 }
 
-func (c *AdaptController) AccessType() string {
-	return c.AppController.(*AdaptController).GEAdminBaseController.AccessType()
+func (c *AdaptAdminController) AccessType() string {
+	return geacontrollers.AccessTypeCookie
 }
 
-func (c *AdaptController) Prepare() {
+func (c *AdaptAdminController) Prepare() {
 	c.Controller.Prepare()
 	c.GEAdminBaseController.Prepare()
 }
 
-func (c *AdaptController) Redirect(url string, code int) {
+func (c *AdaptAdminController) Redirect(url string, code int) {
 	c.Controller.Redirect(url, code)
 }
 
-func (c *AdaptController) SetLayout(layout string) {
+func (c *AdaptAdminController) SetLayout(layout string) {
 	c.Layout = layout
 }
 
-func (c *AdaptController) SetTplName(tplName string) {
+func (c *AdaptAdminController) SetTplName(tplName string) {
 	c.TplName = tplName
 }
 
-func (c *AdaptController) GetController() string {
+func (c *AdaptAdminController) GetController() string {
 	controller, _ := c.GetControllerAndAction()
 	return controller
 }
 
-func (c *AdaptController) ControllerName() string {
+func (c *AdaptAdminController) ControllerName() string {
 	ctrl := c.GetController()
 	return strings.ToLower(ctrl[0 : len(ctrl)-10])
 }
 
-func (c *AdaptController) GetAction() string {
+func (c *AdaptAdminController) GetAction() string {
 	_, action := c.Controller.GetControllerAndAction()
 	return action
 }
 
-func (c *AdaptController) ActionName() string {
+func (c *AdaptAdminController) ActionName() string {
 	return strings.ToLower(c.GetAction())
 }
 
-func (c *AdaptController) SetData(dataType interface{}, data interface{}) {
+func (c *AdaptAdminController) SetData(dataType interface{}, data interface{}) {
 	c.Data[dataType] = data
 }
 
-func (c *AdaptController) GetData() map[interface{}]interface{} {
+func (c *AdaptAdminController) GetData() map[interface{}]interface{} {
 	return c.Data
 }
 
-func (c *AdaptController) ServeJSON(encoding ...bool) {
+func (c *AdaptAdminController) ServeJSON(encoding ...bool) {
 	c.Controller.ServeJSON(encoding...)
 }
 
-func (c *AdaptController) CustomAbort(status int, body string) {
+func (c *AdaptAdminController) CustomAbort(status int, body string) {
 	c.Controller.CustomAbort(status, body)
 }
 
-func (c *AdaptController) StopRun() {
+func (c *AdaptAdminController) StopRun() {
 	c.Controller.StopRun()
+}
+
+type AdaptAPIController struct {
+	AdaptAdminController
+}
+
+func (c *AdaptAPIController) AccessType() string {
+	return geacontrollers.AccessTypeJWT
 }

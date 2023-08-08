@@ -16,7 +16,7 @@ import (
 
 // LoginController
 type LoginController struct {
-	basecontrollers.AdaptController
+	basecontrollers.AdaptAdminController
 }
 
 // Login 登录
@@ -47,18 +47,18 @@ func (c *LoginController) Login() {
 			} else if !user.Status {
 				errorMsg = "该帐号已禁用"
 			} else {
-				user.LastIP = c.AdaptController.Ctx.Request.RemoteAddr
+				user.LastIP = c.AdaptAdminController.Ctx.Request.RemoteAddr
 				user.LastLogin = time.Now().Unix()
 				// orm.NewOrm().
 				// 	QueryTable(user).
 				// 	Update(
 				// 		orm.Params{
 				// 			"LastLogin": time.Now().Unix(),
-				// 			"LastIP":    c.AdaptController.Ctx.Request.RemoteAddr,
+				// 			"LastIP":    c.AdaptAdminController.Ctx.Request.RemoteAddr,
 				// 		},
 				// 	)
 				user.LastLogin = time.Now().Unix()
-				user.LastIP = c.AdaptController.Ctx.Request.RemoteAddr
+				user.LastIP = c.AdaptAdminController.Ctx.Request.RemoteAddr
 				ginmodels.DB().Updates(user)
 
 				cache.MemCache().Set(
@@ -78,7 +78,7 @@ func (c *LoginController) Login() {
 			c.Redirect("/login", 302)
 		}
 	}
-	c.AdaptController.TplName = "login/login.html"
+	c.AdaptAdminController.TplName = "login/login.html"
 }
 
 // Logout 登出

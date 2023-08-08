@@ -44,10 +44,6 @@ func (c *GEAdminBaseController) Adapter(controller interface{}) {
 	c.GEARolePolicy = controller.(GEARolePolicy)
 }
 
-func (c *GEAdminBaseController) AccessType() string {
-	return AccessTypeCookie
-}
-
 // DBModel 返回控制器对应的数据库模型
 func (c *GEAdminBaseController) DBModel() geamodels.Model {
 	return AdminModel
@@ -600,12 +596,4 @@ func (c *GEAdminBaseController) auth() {
 	} else {
 		panic("access type undefined")
 	}
-}
-
-type GEAPIBaseController struct {
-	GEAdminBaseController
-}
-
-func (c *GEAPIBaseController) AccessType() string {
-	return AccessTypeJWT
 }

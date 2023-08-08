@@ -6,7 +6,7 @@ import (
 
 // AdminBaseController 管理面板基础类
 type AdminBaseController struct {
-	basecontrollers.AdaptController
+	basecontrollers.AdaptAdminController
 }
 
 // Prefix 前缀

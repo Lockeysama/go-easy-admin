@@ -32,7 +32,7 @@ func (c *AdministratorController) QueryList(
 	order map[string]string,
 	loadRel bool,
 ) interface{} {
-	l := c.AdaptController.GEAdminBaseController.GEADataBaseQueryList(model, page, limit, filters, order, loadRel)
+	l := c.AdaptAdminController.GEAdminBaseController.GEADataBaseQueryList(model, page, limit, filters, order, loadRel)
 	x := l.(*[]*adminmodels.Admin)
 	return x
 }
