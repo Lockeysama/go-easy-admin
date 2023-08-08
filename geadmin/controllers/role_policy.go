@@ -32,7 +32,7 @@ const (
 )
 
 func (c *GEAdminBaseController) AccessType() string {
-	return AccessTypeCookie
+	return AccessTypeNoAuth
 }
 
 // Prefix 前缀
