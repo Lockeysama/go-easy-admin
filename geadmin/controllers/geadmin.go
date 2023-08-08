@@ -474,7 +474,7 @@ func (c *GEAdminBaseController) Detail() {
 
 // auth 登录权限验证
 func (c *GEAdminBaseController) auth() {
-	if c.AccessType() == AccessTypeCookie {
+	if c.GEARolePolicy.AccessType() == AccessTypeCookie {
 		arr := strings.Split(c.GetCookie("auth"), "|")
 		if len(arr) == 2 {
 			idStr, password := arr[0], arr[1]
@@ -567,7 +567,7 @@ func (c *GEAdminBaseController) auth() {
 			(c.ControllerName() != "login" || c.ActionName() != "login") {
 			c.redirect("/login")
 		}
-	} else if c.AccessType() == AccessTypeJWT {
+	} else if c.GEARolePolicy.AccessType() == AccessTypeJWT {
 		token := strings.Split(c.RequestHeaderQuery("Authorization"), " ")
 		if len(token) == 2 {
 			if APIAuthFunc != nil {
