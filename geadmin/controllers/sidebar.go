@@ -60,9 +60,7 @@ func SideTree(path map[string][]string) *[]SideNode {
 	// TODO 速度优化
 	trees := new([]SideNode)
 	keys := reflect.ValueOf(path).MapKeys()
-	keysOrder := func(i, j int) bool {
-		return keys[i].Interface().(string) < keys[j].Interface().(string)
-	}
+	keysOrder := func(i, j int) bool { return keys[i].Interface().(string) < keys[j].Interface().(string) }
 	sort.Slice(keys, keysOrder)
 	for _, prefix := range keys {
 		paths := path[prefix.Interface().(string)]
@@ -70,6 +68,9 @@ func SideTree(path map[string][]string) *[]SideNode {
 			parent := nodesMap["__ParentNode"]
 			for _, _path := range paths {
 				child := nodesMap[_path]
+				if child.Path == "" {
+					continue
+				}
 				parent.Child = append(parent.Child, &child)
 			}
 			*trees = append(*trees, parent)
